@@ -122,9 +122,9 @@ fn init_db(conn: &Connection) -> Result<()> {
 
 fn extract_audio_url(pdf_path: &Path) -> Option<String> {
     let data = std::fs::read(pdf_path).ok()?;
-    // Search for adhs.expert audio URLs in the raw PDF bytes
     let text = String::from_utf8_lossy(&data);
-    let re = regex::Regex::new(r"https://adhs\.expert/[^\s)\x22<>]+\.(m4a|mp3)").ok()?;
+    // Match any m4a/mp3 URL (adhs.expert, schizoud.wordpress.com, etc.)
+    let re = regex::Regex::new(r"https?://[^\s)\x22<>]+\.(m4a|mp3)").ok()?;
     re.find(&text).map(|m| m.as_str().to_string())
 }
 
@@ -301,6 +301,92 @@ fn vortrag_id_from_filename(filename: &str) -> String {
         .to_string()
 }
 
+/// Format raw text into HTML: join lines into flowing text, bold timestamps, bold+italic speakers
+fn format_text_html(text: &str) -> String {
+    let normalized = regex::Regex::new(r" {2,}")
+        .unwrap()
+        .replace_all(text, " ");
+
+    let timestamp_re = regex::Regex::new(r"^\[?\d{2}:\d{2}").unwrap();
+    let speaker_re =
+        regex::Regex::new(r"^(Dr\.|Prof\.|Dipl\.|Bemerkung|Audio\b|Referent)").unwrap();
+
+    let lines: Vec<&str> = normalized.lines().collect();
+    let mut joined = String::new();
+
+    for line in &lines {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if timestamp_re.is_match(trimmed) {
+            if !joined.is_empty() {
+                joined.push_str("\n\n");
+            }
+            joined.push_str(trimmed);
+            joined.push('\n');
+            continue;
+        }
+        if speaker_re.is_match(trimmed) {
+            if !joined.is_empty() && !joined.ends_with('\n') {
+                joined.push_str("\n\n");
+            }
+            joined.push_str(trimmed);
+            joined.push('\n');
+            continue;
+        }
+        if !joined.is_empty() && !joined.ends_with('\n') && !joined.ends_with(' ') {
+            joined.push(' ');
+        }
+        joined.push_str(trimmed);
+    }
+
+    let collapsed = regex::Regex::new(r"\n{3,}")
+        .unwrap()
+        .replace_all(&joined, "\n\n");
+
+    // Extract URLs before HTML-escaping, replace with placeholders
+    let url_re = regex::Regex::new(r#"(https?://[^\s<>"]+)"#).unwrap();
+    let mut urls: Vec<String> = Vec::new();
+    let with_placeholders = url_re.replace_all(&collapsed, |caps: &regex::Captures| {
+        let url = caps[1].to_string();
+        let idx = urls.len();
+        urls.push(url);
+        format!("__URL_PLACEHOLDER_{}__", idx)
+    });
+
+    let escaped = with_placeholders
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;");
+
+    // Bold timestamps, bold+italic speakers
+    let ts_re = regex::Regex::new(r#"(?m)^\[(\d{2}:\d{2}:\d{2}\.\d{3})\] - (.+)$"#).unwrap();
+    let formatted = ts_re.replace_all(&escaped, "<b>[$1]</b> - <b><i>$2</i></b>");
+
+    let sp_re = regex::Regex::new(r#"(?m)^((?:Dr\.med\.|Prof\.|Dipl\.)[^\n(]+\(\d{2}:\d{2}\))"#).unwrap();
+    let formatted = sp_re.replace_all(&formatted, "<b><i>$1</i></b>");
+
+    let formatted = formatted
+        .replace("\n\n", "<br><br>")
+        .replace('\n', "<br>");
+
+    let br_re = regex::Regex::new(r"(<br>){3,}").unwrap();
+    let mut result = br_re.replace_all(&formatted, "<br><br>").to_string();
+
+    // Restore URL placeholders as clickable links
+    for (idx, url) in urls.iter().enumerate() {
+        let placeholder = format!("__URL_PLACEHOLDER_{}__", idx);
+        let link = format!(
+            r#"<a href="{}" target="_blank" rel="noopener" style="color:#4a90d9">{}</a>"#,
+            url, url
+        );
+        result = result.replace(&placeholder, &link);
+    }
+
+    result
+}
+
 // --- Web GUI ---
 
 struct SharedState {
@@ -465,13 +551,18 @@ async fn api_search(
         .query_map([&fts_query], |row| {
             let fname: String = row.get(0)?;
             let vid = vortrag_id_from_filename(&fname);
+            let raw_snippet: String = row.get(4)?;
+            // Preserve <mark> tags: temporarily replace, format, restore
+            let snippet = raw_snippet.replace("<mark>", "\x01MARK\x01").replace("</mark>", "\x01/MARK\x01");
+            let snippet = format_text_html(&snippet);
+            let snippet = snippet.replace("\x01MARK\x01", "<mark>").replace("\x01/MARK\x01", "</mark>");
             Ok(SearchResult {
                 filename: fname,
                 vortrag_id: vid,
                 title: row.get(1)?,
                 date: row.get(2)?,
                 audio_url: row.get(3)?,
-                snippet: row.get(4)?,
+                snippet,
                 rank: row.get(5)?,
             })
         })
@@ -620,15 +711,9 @@ where
         .unwrap()
 }
 
-#[derive(Deserialize)]
-struct VortragParams {
-    q: Option<String>,
-}
-
 async fn vortrag_page(
     State(state): State<Arc<SharedState>>,
     AxumPath(id_or_filename): AxumPath<String>,
-    Query(params): Query<VortragParams>,
 ) -> Html<String> {
     let conn = state.db.lock().unwrap();
 
@@ -666,10 +751,6 @@ async fn vortrag_page(
         .and_then(|s| s.strip_suffix(".pdf"))
         .unwrap_or("");
 
-    let ganglion_url = format!(
-        "https://ganglion.ch/html/popup_vortrag.php?id={}",
-        vortrag_id
-    );
     let pdf_url = format!(
         "https://ganglion.ch/html/php/download_vortrag.php?id={}&download=pdf",
         vortrag_id
@@ -683,26 +764,26 @@ async fn vortrag_page(
         )
     };
 
-    // HTML-escape the content
-    let escaped = content
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;");
+    // Split off header (everything before first timestamp) — we show it in the page header
+    let body_start_re = regex::Regex::new(r"(?m)^\[?\d{2}:\d{2}").unwrap();
+    let header_text = match body_start_re.find(&content) {
+        Some(m) => &content[..m.start()],
+        None => "",
+    };
+    let body_text = match body_start_re.find(&content) {
+        Some(m) => &content[m.start()..],
+        None => &content,
+    };
 
-    // Build highlight terms from query
-    let highlight_terms: Vec<String> = params
-        .q
-        .as_deref()
+    // Extract speaker names from the header
+    let speaker = header_text
+        .lines()
+        .map(|l| l.trim())
+        .find(|l| !l.is_empty() && !l.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false))
         .unwrap_or("")
-        .split_whitespace()
-        .filter(|w| w.len() > 1)
-        .filter(|w| !matches!(w.to_uppercase().as_str(), "AND" | "OR" | "NOT" | "NEAR"))
-        .map(|w| w.replace(|c: char| !c.is_alphanumeric() && c != 'ä' && c != 'ö' && c != 'ü' && c != 'Ä' && c != 'Ö' && c != 'Ü' && c != 'ß' && c != '*', ""))
-        .filter(|w| !w.is_empty())
-        .collect();
+        .replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
 
-    // Serialize highlight terms to JSON for JS-side highlighting
-    let terms_json = serde_json::to_string(&highlight_terms).unwrap_or_else(|_| "[]".to_string());
+    let formatted = format_text_html(body_text);
 
     let title_escaped = title.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
 
@@ -717,91 +798,38 @@ async fn vortrag_page(
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #333; }}
   .container {{ max-width: 900px; margin: 0 auto; padding: 20px; }}
-  .back {{ display: inline-block; margin-bottom: 20px; color: #4a90d9; text-decoration: none; font-size: 0.95em; }}
-  .back:hover {{ text-decoration: underline; }}
   .header {{ background: white; border-radius: 8px; padding: 20px 24px; margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #4a90d9; }}
   .header h1 {{ font-size: 1.5em; margin-bottom: 8px; color: #333; }}
   .header-links {{ display: flex; gap: 16px; flex-wrap: wrap; }}
   .header-links a {{ color: #4a90d9; text-decoration: none; font-size: 0.9em; }}
   .header-links a:hover {{ text-decoration: underline; }}
-  .highlight-bar {{ background: white; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; font-size: 0.9em; color: #666; }}
-  .highlight-bar strong {{ color: #333; }}
-  .highlight-count {{ background: #fff3cd; padding: 2px 8px; border-radius: 4px; font-weight: 600; }}
-  .nav-btn {{ background: #4a90d9; color: white; border: none; padding: 4px 12px; border-radius: 4px;
-    cursor: pointer; font-size: 0.85em; }}
-  .nav-btn:hover {{ background: #357abd; }}
   .content {{ background: white; border-radius: 8px; padding: 24px 28px; margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 1.8; font-size: 0.95em;
-    white-space: pre-wrap; word-wrap: break-word; }}
-  mark {{ background: #fff3cd; padding: 1px 3px; border-radius: 2px; }}
-  mark.current {{ background: #f0ad4e; color: white; }}
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); line-height: 1.6; font-size: 0.95em;
+    word-wrap: break-word; }}
 </style>
 </head>
 <body>
 <div class="container">
-  <a class="back" href="javascript:history.back()">← Zurück zur Suche</a>
   <div class="header">
     <h1>{title}</h1>
-    <div style="color:#666; margin-bottom:8px; font-size:0.9em;">{date}</div>
+    <div style="color:#555; margin-bottom:4px; font-size:0.95em; font-style:italic;">{speaker}</div>
+    <div style="color:#888; margin-bottom:10px; font-size:0.9em;">{date}</div>
     <div class="header-links">
       {audio_link}
-      <a href="{ganglion_url}" target="_blank" rel="noopener">Auf ganglion.ch ansehen</a>
       <a href="{pdf_url}" target="_blank" rel="noopener">PDF herunterladen</a>
     </div>
   </div>
-  <div class="highlight-bar" id="highlight-bar" style="display:none">
-    <strong>Hervorhebung:</strong>
-    <span id="highlight-info"></span>
-    <button class="nav-btn" onclick="navHighlight(-1)">↑ Vorherige</button>
-    <button class="nav-btn" onclick="navHighlight(1)">↓ Nächste</button>
-  </div>
-  <div class="content" id="content">{content}</div>
+  <div class="content">{content}</div>
 </div>
-<script>
-const terms = {terms_json};
-const contentEl = document.getElementById('content');
-const barEl = document.getElementById('highlight-bar');
-const infoEl = document.getElementById('highlight-info');
-let marks = [];
-let currentIdx = -1;
-
-if (terms.length > 0) {{
-  let html = contentEl.innerHTML;
-  // Build regex from terms (case-insensitive)
-  const pattern = terms.map(t => {{
-    const escaped = t.replace(/[.*+?^${{}}()|[\]\\]/g, '\\$&');
-    if (escaped.endsWith('\\*')) return escaped.slice(0, -2) + '\\w*';
-    return escaped;
-  }}).join('|');
-  const re = new RegExp('(' + pattern + ')', 'gi');
-  html = html.replace(re, '<mark>$1</mark>');
-  contentEl.innerHTML = html;
-  marks = contentEl.querySelectorAll('mark');
-  barEl.style.display = 'flex';
-  infoEl.innerHTML = '<span class="highlight-count">' + marks.length + '</span> Treffer';
-  if (marks.length > 0) navHighlight(1);
-}}
-
-function navHighlight(dir) {{
-  if (marks.length === 0) return;
-  if (currentIdx >= 0) marks[currentIdx].classList.remove('current');
-  currentIdx = (currentIdx + dir + marks.length) % marks.length;
-  marks[currentIdx].classList.add('current');
-  marks[currentIdx].scrollIntoView({{ behavior: 'smooth', block: 'center' }});
-  infoEl.innerHTML = '<span class="highlight-count">' + (currentIdx + 1) + ' / ' + marks.length + '</span> Treffer';
-}}
-</script>
 </body>
 </html>"##,
         title = title_escaped,
+        speaker = speaker,
         date = date,
         audio_link = audio_link_html,
-        ganglion_url = ganglion_url,
         pdf_url = pdf_url,
-        content = escaped,
-        terms_json = terms_json,
+        content = formatted,
     );
 
     Html(html)

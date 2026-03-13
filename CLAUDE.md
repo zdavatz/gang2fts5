@@ -22,13 +22,14 @@ bash download_pdfs.sh                            # download all PDFs from gangli
 - **src/main.rs** — CLI + web server (axum), subcommands: `index`, `search`, `serve`
   - `init_db()` — schema with `documents` table (filename, title, date, audio_url, content) + FTS5 virtual table with content-sync triggers, handles migrations
   - `extract_pdf_text()` — PDF text extraction with `pdf-extract`, wrapped in `catch_unwind` for crash resilience
-  - `extract_audio_url()` — regex scan of raw PDF bytes for `adhs.expert` audio links (m4a/mp3)
+  - `extract_audio_url()` — regex scan of raw PDF bytes for audio links (adhs.expert, schizoud.wordpress.com, etc.)
   - `index_pdfs()` — walks pdf/ dir, extracts text, inserts into SQLite (skips existing)
   - `populate_metadata()` — sets titles, dates, and audio URLs from `titles.rs` + PDF binary scan
   - `retrieve_context()` — FTS5 search to find relevant chunks for RAG
   - `build_grok_request()` — constructs streaming chat completion request for xAI API
   - `api_ask()` — SSE streaming endpoint: FTS5 retrieval → Grok streaming → token-by-token response
-  - `vortrag_page()` — detail page rendering full text with JS-based search term highlighting
+  - `format_text_html()` — shared text formatter: joins PDF lines into flowing text, bolds timestamps, bold+italic speakers, auto-linkifies URLs
+  - `vortrag_page()` — detail page with formatted text, speaker/date header, audio+PDF links
 - **src/titles.rs** — static metadata mapping (vortrag ID → title + date) scraped from ganglion.ch
 - **src/index.html** — SPA with search mode, ask mode (SSE streaming), markdown rendering, source links
 - **download_pdfs.sh** — downloads all PDFs from ganglion.ch into pdf/
@@ -49,6 +50,6 @@ bash download_pdfs.sh                            # download all PDFs from gangli
 ## URL Routes
 
 - `/` — search/ask SPA
-- `/vortrag/:id?q=...` — detail page with highlighting (e.g. `/vortrag/580?q=ADHS`)
+- `/vortrag/:id` — detail page with formatted transcript (e.g. `/vortrag/580`)
 - `/api/search?q=...` — JSON search results
 - `/api/ask` — POST, SSE streaming RAG response
