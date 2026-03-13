@@ -1,0 +1,4 @@
+/target
+/pdf/*.pdf
+*.db
+*.db.bak

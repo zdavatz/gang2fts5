@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ganglion Vorträge</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #333; }
+  .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+  h1 { text-align: center; margin: 30px 0 10px; font-size: 1.8em; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 20px; font-size: 0.95em; }
+
+  .mode-tabs { display: flex; justify-content: center; gap: 4px; margin-bottom: 20px; }
+  .mode-tab {
+    padding: 8px 20px; font-size: 15px; border: 2px solid #ddd; background: white;
+    cursor: pointer; border-radius: 6px; transition: all 0.2s; color: #666;
+  }
+  .mode-tab.active { border-color: #4a90d9; background: #4a90d9; color: white; }
+  .mode-tab:hover:not(.active) { border-color: #aaa; }
+
+  .search-box { display: flex; gap: 10px; margin-bottom: 30px; }
+  .search-box input, .search-box textarea {
+    flex: 1; padding: 12px 16px; font-size: 16px; border: 2px solid #ddd;
+    border-radius: 8px; outline: none; transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .search-box input:focus, .search-box textarea:focus { border-color: #4a90d9; }
+  .search-box button {
+    padding: 12px 24px; font-size: 16px; background: #4a90d9; color: white;
+    border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .search-box button:hover { background: #357abd; }
+  .search-box button:disabled { background: #aaa; cursor: not-allowed; }
+
+  .status { text-align: center; color: #888; margin: 20px 0; }
+  .result {
+    background: white; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #4a90d9;
+  }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .result-title { font-weight: 600; color: #4a90d9; font-size: 1.05em; text-decoration: none; }
+  .result-title:hover { text-decoration: underline; }
+  .result-meta { font-size: 0.8em; color: #999; margin-left: 8px; }
+  .result-rank { font-size: 0.85em; color: #999; }
+  .result-snippet { line-height: 1.6; color: #555; font-size: 0.95em; white-space: pre-wrap; }
+  .result-snippet mark { background: #fff3cd; padding: 1px 2px; border-radius: 2px; }
+
+  .answer-box {
+    background: white; border-radius: 8px; padding: 20px 24px; margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #2ecc71;
+    line-height: 1.7; font-size: 0.95em;
+  }
+  .answer-box p { margin-bottom: 10px; }
+  .sources-label { font-weight: 600; color: #666; margin: 16px 0 8px; font-size: 0.9em; }
+  .source-tag {
+    display: inline-block; background: #eef4fb; color: #4a90d9; padding: 3px 10px;
+    border-radius: 4px; font-size: 0.85em; margin: 2px 4px 2px 0;
+  }
+
+  .info-box {
+    background: #f0f7ff; border-radius: 8px; padding: 14px 20px; margin-top: 16px;
+    border: 1px solid #d0e3f7; font-size: 0.9em; line-height: 1.6; color: #555;
+  }
+  .info-box a { color: #4a90d9; text-decoration: none; font-weight: 500; }
+  .info-box a:hover { text-decoration: underline; }
+
+  .tips { background: white; border-radius: 8px; padding: 16px 20px; margin-top: 20px; }
+  .tips h3 { margin-bottom: 8px; font-size: 1em; }
+  .tips ul { padding-left: 20px; color: #666; font-size: 0.9em; line-height: 1.8; }
+  .tips code { background: #eee; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #ddd;
+    border-top-color: #4a90d9; border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Ganglion Vorträge</h1>
+  <p class="subtitle">Volltextsuche und KI-Antworten aus Vortrags-PDFs</p>
+
+  <div class="mode-tabs">
+    <div class="mode-tab active" onclick="setMode('search')">Suchen</div>
+    <div class="mode-tab" onclick="setMode('ask')">Fragen (KI)</div>
+  </div>
+
+  <div class="search-box" id="search-box">
+    <input type="text" id="q" placeholder="Suchbegriff eingeben... z.B. ADHS Kinder Schule" autofocus>
+    <button id="btn" onclick="doAction()">Suchen</button>
+  </div>
+
+  <div id="status" class="status"></div>
+  <div id="answer"></div>
+  <div id="results"></div>
+
+  <div class="tips" id="tips">
+    <h3>Suchtipps</h3>
+    <ul>
+      <li>Einfach einen Satz oder Stichwörter eingeben, z.B. <code>Depression bei Jugendlichen</code></li>
+      <li>Exakte Phrase mit Anführungszeichen: <code>"posttraumatische Belastungsstörung"</code></li>
+      <li>Begriffe kombinieren: <code>ADHS AND Schule</code></li>
+      <li>Begriffe ausschliessen: <code>ADHS NOT Erwachsene</code></li>
+      <li>Prefix-Suche: <code>Schizo*</code></li>
+      <li><strong>Fragen-Modus:</strong> Stelle eine Frage in natürlicher Sprache, z.B. <code>Was hilft Kindern mit ADHS in der Schule?</code></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const input = document.getElementById('q');
+const resultsDiv = document.getElementById('results');
+const answerDiv = document.getElementById('answer');
+const statusDiv = document.getElementById('status');
+const tipsDiv = document.getElementById('tips');
+const btn = document.getElementById('btn');
+let mode = 'search';
+
+input.addEventListener('keydown', e => { if (e.key === 'Enter') doAction(); });
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && m === 'search') || (i === 1 && m === 'ask'));
+  });
+  btn.textContent = m === 'search' ? 'Suchen' : 'Fragen';
+  input.placeholder = m === 'search'
+    ? 'Suchbegriff eingeben... z.B. ADHS Kinder Schule'
+    : 'Frage stellen... z.B. Was hilft Kindern mit ADHS in der Schule?';
+  answerDiv.innerHTML = '';
+  resultsDiv.innerHTML = '';
+  statusDiv.textContent = '';
+  tipsDiv.style.display = '';
+  input.focus();
+}
+
+function doAction() {
+  if (mode === 'search') doSearch();
+  else doAsk();
+}
+
+async function doSearch() {
+  const q = input.value.trim();
+  if (!q) return;
+
+  statusDiv.textContent = 'Suche...';
+  resultsDiv.innerHTML = '';
+  answerDiv.innerHTML = '';
+  tipsDiv.style.display = 'none';
+
+  try {
+    const resp = await fetch('/api/search?q=' + encodeURIComponent(q));
+    const data = await resp.json();
+
+    if (data.length === 0) {
+      statusDiv.textContent = 'Keine Ergebnisse gefunden.';
+      return;
+    }
+
+    statusDiv.textContent = data.length + ' Ergebnis' + (data.length !== 1 ? 'se' : '') + ' gefunden';
+
+    resultsDiv.innerHTML = data.map(r => {
+      const title = r.title || r.filename;
+      const link = '/vortrag/' + r.vortrag_id + '?q=' + encodeURIComponent(q);
+      const date = r.date ? ' · ' + esc(r.date) : '';
+      const audio = r.audio_url ? ` · <a href="${esc(r.audio_url)}" target="_blank" rel="noopener" style="color:#e67e22;text-decoration:none" title="Audio anhören">&#9835; Audio</a>` : '';
+      return `
+      <div class="result">
+        <div class="result-header">
+          <span>
+            <a class="result-title" href="${link}" target="_blank" rel="noopener">${esc(title)}</a>
+            <span class="result-meta">${esc(r.filename)}${date}${audio}</span>
+          </span>
+          <span class="result-rank">Score: ${r.rank.toFixed(2)}</span>
+        </div>
+        <div class="result-snippet">${r.snippet}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    statusDiv.textContent = 'Fehler: ' + e.message;
+  }
+}
+
+async function doAsk() {
+  const q = input.value.trim();
+  if (!q) return;
+
+  statusDiv.innerHTML = '<span class="spinner"></span>Suche relevante Abschnitte...';
+  resultsDiv.innerHTML = '';
+  answerDiv.innerHTML = '';
+  tipsDiv.style.display = 'none';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q }),
+    });
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let rawAnswer = '';
+    let sourcesHtml = '';
+    let started = false;
+
+    answerDiv.innerHTML = '<div class="answer-box"><div id="answer-text"></div><div id="answer-sources"></div></div><div class="info-box" id="info-box" style="display:none">Für weiterführende Informationen hören Sie in den <a href="https://open.spotify.com/show/67sgy1aLTLXKCWkmgoqJ46" target="_blank" rel="noopener">Ganglion-Podcast</a> ein oder besuchen Sie den <a href="https://www.youtube.com/@udavatz" target="_blank" rel="noopener">YouTube-Kanal</a>.</div>';
+    const textEl = document.getElementById('answer-text');
+    const srcEl = document.getElementById('answer-sources');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6);
+        let msg;
+        try { msg = JSON.parse(json); } catch { continue; }
+
+        if (msg.type === 'sources') {
+          const askQ = input.value.trim();
+          sourcesHtml = '<div class="sources-label">Quellen:</div>' +
+            msg.sources.map(s => {
+              const link = '/vortrag/' + s.vortrag_id + '?q=' + encodeURIComponent(askQ);
+              const audio = s.audio_url ? ` <a href="${esc(s.audio_url)}" target="_blank" rel="noopener" style="color:#e67e22;text-decoration:none" title="Audio anhören">&#9835;</a>` : '';
+              return `<a class="source-tag" href="${link}" target="_blank" rel="noopener" style="text-decoration:none">${esc(s.title || s.filename)}</a>${audio}`;
+            }).join('');
+          srcEl.innerHTML = sourcesHtml;
+          statusDiv.innerHTML = '<span class="spinner"></span>KI antwortet...';
+        }
+
+        if (msg.type === 'token') {
+          if (!started) { started = true; statusDiv.textContent = ''; }
+          rawAnswer += msg.content;
+          textEl.innerHTML = formatAnswer(rawAnswer);
+        }
+
+        if (msg.type === 'error') {
+          statusDiv.textContent = '';
+          textEl.innerHTML = '<p>' + esc(msg.content) + '</p>';
+        }
+
+        if (msg.type === 'done') {
+          statusDiv.textContent = '';
+          const infoBox = document.getElementById('info-box');
+          if (infoBox) infoBox.style.display = '';
+        }
+      }
+    }
+  } catch (e) {
+    statusDiv.textContent = 'Fehler: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function formatAnswer(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // headings
+    .replace(/^### (.+)$/gm, '<strong style="font-size:1.05em">$1</strong>')
+    .replace(/^## (.+)$/gm, '<strong style="font-size:1.1em">$1</strong>')
+    // bold + italic
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    // bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // links
+    .replace(/(https?:\/\/[^\s)<,]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:#4a90d9">$1</a>')
+    // bullet lists
+    .replace(/^- (.+)$/gm, '&bull; $1')
+    .replace(/^\d+\. (.+)$/gm, '<span style="margin-left:4px">$&</span>')
+    // paragraphs
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
