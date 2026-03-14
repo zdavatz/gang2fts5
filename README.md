@@ -30,6 +30,17 @@ cargo build --release
 export XAI_API_KEY="your-key"
 ./target/release/gang2fts5 serve
 # -> http://localhost:3000
+
+# Deploy: build, index and scp binary + DB to remote server
+./target/release/gang2fts5 deploy
+```
+
+### Deploy-Konfiguration
+
+Erstelle eine Datei `deploy.conf` (wird nicht committed):
+
+```
+DEPLOY_TARGET=user@host:/path/to/deploy/
 ```
 
 ## Weiterführende Informationen

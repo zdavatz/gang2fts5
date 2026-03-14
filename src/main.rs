@@ -45,6 +45,12 @@ enum Commands {
         #[arg(short, long, default_value = "3000")]
         port: u16,
     },
+    /// Build database and deploy binary + DB to remote server
+    Deploy {
+        /// Directory containing PDF files
+        #[arg(short, long, default_value = "pdf")]
+        pdf_dir: String,
+    },
 }
 
 fn init_db(conn: &Connection) -> Result<()> {
@@ -885,6 +891,51 @@ async fn main() -> Result<()> {
         }
         Commands::Serve { port } => {
             start_server(&cli.db, *port).await?;
+        }
+        Commands::Deploy { pdf_dir } => {
+            // Build release binary
+            println!("Building release binary...");
+            let status = std::process::Command::new("cargo")
+                .args(["build", "--release"])
+                .status()
+                .context("Failed to run cargo build")?;
+            if !status.success() {
+                anyhow::bail!("cargo build --release failed");
+            }
+
+            // Build database
+            println!("Indexing PDFs into {}...", &cli.db);
+            let conn = Connection::open(&cli.db)?;
+            init_db(&conn)?;
+            index_pdfs(&conn, pdf_dir)?;
+            populate_metadata(&conn, pdf_dir)?;
+            drop(conn);
+
+            // Read deploy target from deploy.conf
+            let conf_path = Path::new("deploy.conf");
+            let conf = std::fs::read_to_string(conf_path)
+                .context("Failed to read deploy.conf — create it with DEPLOY_TARGET=user@host:/path/")?;
+            let target = conf
+                .lines()
+                .find_map(|line| line.strip_prefix("DEPLOY_TARGET="))
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .ok_or_else(|| anyhow::anyhow!("DEPLOY_TARGET not found in deploy.conf"))?
+                .to_string();
+
+            // scp binary and database
+            let binary = "target/release/gang2fts5";
+            println!("Deploying {} and {} to {}", binary, &cli.db, &target);
+
+            let status = std::process::Command::new("scp")
+                .args([binary, &cli.db, &target])
+                .status()
+                .context("Failed to run scp")?;
+            if !status.success() {
+                anyhow::bail!("scp failed");
+            }
+
+            println!("Deploy complete.");
         }
     }
 

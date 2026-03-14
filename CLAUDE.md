@@ -14,12 +14,13 @@ cargo build --release
 ./target/release/gang2fts5 search "ADHS"        # CLI search
 ./target/release/gang2fts5 serve                 # web GUI on port 3000 (needs XAI_API_KEY)
 ./target/release/gang2fts5 serve -p 8080         # custom port
+./target/release/gang2fts5 deploy                # build, index, scp binary+DB to remote
 bash download_pdfs.sh                            # download all PDFs from ganglion.ch
 ```
 
 ## Architecture
 
-- **src/main.rs** — CLI + web server (axum), subcommands: `index`, `search`, `serve`
+- **src/main.rs** — CLI + web server (axum), subcommands: `index`, `search`, `serve`, `deploy`
   - `init_db()` — schema with `documents` table (filename, title, date, audio_url, content) + FTS5 virtual table with content-sync triggers, handles migrations
   - `extract_pdf_text()` — PDF text extraction with `pdf-extract`, wrapped in `catch_unwind` for crash resilience
   - `extract_audio_url()` — regex scan of raw PDF bytes for audio links (adhs.expert, schizoud.wordpress.com, etc.)

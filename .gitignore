@@ -2,3 +2,4 @@
 /pdf/*.pdf
 *.db
 *.db.bak
+deploy.conf
