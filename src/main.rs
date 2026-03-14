@@ -870,13 +870,22 @@ async fn start_server(db_path: &str, port: u16) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    // Use 8MB stack for worker threads (musl defaults to 128KB which is too small)
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .thread_stack_size(8 * 1024 * 1024)
-        .build()?;
+    // Spawn main logic on a thread with 8MB stack (musl default is 128KB, too small for SQLite)
+    let builder = std::thread::Builder::new()
+        .name("main".into())
+        .stack_size(8 * 1024 * 1024);
 
-    runtime.block_on(async_main())
+    let handler = builder.spawn(|| {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .thread_stack_size(8 * 1024 * 1024)
+            .build()
+            .expect("Failed to build tokio runtime");
+
+        runtime.block_on(async_main())
+    })?;
+
+    handler.join().unwrap()
 }
 
 async fn async_main() -> Result<()> {
