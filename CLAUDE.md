@@ -35,9 +35,13 @@ bash download_pdfs.sh                            # download all PDFs from gangli
 - **src/index.html** — SPA with search mode, ask mode (SSE streaming), markdown rendering, source links
 - **download_pdfs.sh** — downloads all PDFs from ganglion.ch into pdf/
 
+## Deploy
+
+The `deploy` subcommand builds a fully static musl binary (`x86_64-unknown-linux-musl`), indexes PDFs, and scps binary + DB to the remote server configured in `deploy.conf` (gitignored). Uses `rustls` instead of OpenSSL. The musl toolchain is configured in `.cargo/config.toml`.
+
 ## Key Dependencies
 
-- `rusqlite` (bundled SQLite with FTS5), `pdf-extract`, `axum`, `tokio`, `reqwest` (streaming), `clap`, `regex`, `async-stream`
+- `rusqlite` (bundled SQLite with FTS5), `pdf-extract`, `axum`, `tokio`, `reqwest` (streaming, rustls-tls), `clap`, `regex`, `async-stream`
 
 ## Environment
 

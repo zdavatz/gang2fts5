@@ -43,6 +43,8 @@ Erstelle eine Datei `deploy.conf` (wird nicht committed):
 DEPLOY_TARGET=user@host:/path/to/deploy/
 ```
 
+Der Deploy baut ein vollständig statisches Binary (musl), das auf jedem x86_64-Linux ohne Abhängigkeiten läuft. Voraussetzung: `x86_64-unknown-linux-musl` Rust-Target und musl-Toolchain (siehe `.cargo/config.toml`).
+
 ## Weiterführende Informationen
 
 - [Ganglion-Podcast auf Spotify](https://open.spotify.com/show/67sgy1aLTLXKCWkmgoqJ46)
