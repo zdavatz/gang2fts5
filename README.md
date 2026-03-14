@@ -45,6 +45,25 @@ DEPLOY_TARGET=user@host:/path/to/deploy/
 
 Der Deploy baut ein vollständig statisches Binary (musl), das auf jedem x86_64-Linux ohne Abhängigkeiten läuft. Voraussetzung: `x86_64-unknown-linux-musl` Rust-Target und musl-Toolchain (siehe `.cargo/config.toml`).
 
+### Apache Reverse Proxy (SSL)
+
+Die Datei `gang2fts5-ssl.conf` enthält die Apache-Konfiguration für `ki.ganglion.ch` mit SSL und Reverse Proxy auf `http://localhost:3000`.
+
+```bash
+# Apache-Module aktivieren
+sudo a2enmod proxy proxy_http rewrite ssl
+
+# Konfiguration verlinken und aktivieren
+sudo cp gang2fts5-ssl.conf /etc/apache2/sites-available/
+sudo a2ensite gang2fts5-ssl
+
+# SSL-Zertifikat mit Let's Encrypt erstellen
+sudo certbot certonly --apache -d ki.ganglion.ch
+
+# Apache neu starten
+sudo systemctl restart apache2
+```
+
 ## Weiterführende Informationen
 
 - [Ganglion-Podcast auf Spotify](https://open.spotify.com/show/67sgy1aLTLXKCWkmgoqJ46)
