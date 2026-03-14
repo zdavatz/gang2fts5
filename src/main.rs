@@ -893,10 +893,10 @@ async fn main() -> Result<()> {
             start_server(&cli.db, *port).await?;
         }
         Commands::Deploy { pdf_dir } => {
-            // Build release binary
-            println!("Building release binary...");
+            // Build static musl release binary
+            println!("Building static release binary (musl)...");
             let status = std::process::Command::new("cargo")
-                .args(["build", "--release"])
+                .args(["build", "--release", "--target", "x86_64-unknown-linux-musl"])
                 .status()
                 .context("Failed to run cargo build")?;
             if !status.success() {
@@ -924,7 +924,7 @@ async fn main() -> Result<()> {
                 .to_string();
 
             // scp binary and database
-            let binary = "target/release/gang2fts5";
+            let binary = "target/x86_64-unknown-linux-musl/release/gang2fts5";
             println!("Deploying {} and {} to {}", binary, &cli.db, &target);
 
             let status = std::process::Command::new("scp")
