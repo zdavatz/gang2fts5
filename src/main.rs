@@ -869,26 +869,8 @@ async fn start_server(db_path: &str, port: u16) -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
-    // Spawn main logic on a thread with 8MB stack (musl default is 128KB, too small for SQLite)
-    let builder = std::thread::Builder::new()
-        .name("main".into())
-        .stack_size(8 * 1024 * 1024);
-
-    let handler = builder.spawn(|| {
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .thread_stack_size(8 * 1024 * 1024)
-            .build()
-            .expect("Failed to build tokio runtime");
-
-        runtime.block_on(async_main())
-    })?;
-
-    handler.join().unwrap()
-}
-
-async fn async_main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -911,10 +893,10 @@ async fn async_main() -> Result<()> {
             start_server(&cli.db, *port).await?;
         }
         Commands::Deploy { pdf_dir } => {
-            // Build static musl release binary
-            println!("Building static release binary (musl)...");
+            // Build release binary
+            println!("Building release binary...");
             let status = std::process::Command::new("cargo")
-                .args(["build", "--release", "--target", "x86_64-unknown-linux-musl"])
+                .args(["build", "--release"])
                 .status()
                 .context("Failed to run cargo build")?;
             if !status.success() {
@@ -942,7 +924,7 @@ async fn async_main() -> Result<()> {
                 .to_string();
 
             // scp binary and database
-            let binary = "target/x86_64-unknown-linux-musl/release/gang2fts5";
+            let binary = "target/release/gang2fts5";
             println!("Deploying {} and {} to {}", binary, &cli.db, &target);
 
             let status = std::process::Command::new("scp")
