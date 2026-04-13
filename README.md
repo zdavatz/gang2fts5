@@ -5,7 +5,7 @@ Volltextsuche und KI-gestützte Fragen über die Vorträge der [Ganglion-Organis
 ## Features
 
 - **PDF-Download & Indexierung** — Lädt alle Vortrags-PDFs von ganglion.ch herunter, extrahiert den Text und indexiert ihn in SQLite mit FTS5
-- **Volltextsuche** — Schnelle Suche über 326 Vorträge mit Snippet-Highlighting
+- **Volltextsuche** — Schnelle Suche über 367 Vorträge mit Snippet-Highlighting
 - **KI-Antworten (RAG)** — Stellt eine Frage in natürlicher Sprache, die App sucht relevante Textabschnitte und lässt sie von Grok (xAI) beantworten, mit Streaming
 - **Web-GUI** — Suchoberfläche mit Suchen- und Fragen-Modus, formatierte Vortrag-Detailseiten, Audio-Links und Quellenverweise
 - **Audio-Links** — Direkte Links zu den Audio-Aufnahmen der Vorträge (von adhs.expert und schizoud.wordpress.com)
@@ -43,7 +43,7 @@ Erstelle eine Datei `deploy.conf` (wird nicht committed):
 DEPLOY_TARGET=user@host:/path/to/deploy/
 ```
 
-Der Deploy baut ein vollständig statisches Binary (musl), das auf jedem x86_64-Linux ohne Abhängigkeiten läuft. Voraussetzung: `x86_64-unknown-linux-musl` Rust-Target und musl-Toolchain (siehe `.cargo/config.toml`).
+Der Deploy baut ein statisches Binary (musl target `x86_64-unknown-linux-musl`), das auf jedem x86_64-Linux ohne Abhängigkeiten läuft. Voraussetzung: musl-Toolchain (konfiguriert in `.cargo/config.toml` via `CC_x86_64_unknown_linux_musl`).
 
 ### Apache Reverse Proxy (SSL)
 

@@ -31,13 +31,13 @@ bash download_pdfs.sh                            # download all PDFs from gangli
   - `api_ask()` — SSE streaming endpoint: FTS5 retrieval → Grok streaming → token-by-token response
   - `format_text_html()` — shared text formatter: joins PDF lines into flowing text, bolds timestamps, bold+italic speakers, auto-linkifies URLs
   - `vortrag_page()` — detail page with formatted text, speaker/date header, audio+PDF links
-- **src/titles.rs** — static metadata mapping (vortrag ID → title + date) scraped from ganglion.ch
+- **src/titles.rs** — static metadata mapping (vortrag ID → title + date) for ~320 lectures, scraped from ganglion.ch
 - **src/index.html** — SPA with search mode, ask mode (SSE streaming), markdown rendering, source links
 - **download_pdfs.sh** — downloads all PDFs from ganglion.ch into pdf/
 
 ## Deploy
 
-The `deploy` subcommand builds a fully static musl binary (`x86_64-unknown-linux-musl`), indexes PDFs, and scps binary + DB to the remote server configured in `deploy.conf` (gitignored). Uses `rustls` instead of OpenSSL. The musl toolchain is configured in `.cargo/config.toml`.
+The `deploy` subcommand builds a static musl binary (`x86_64-unknown-linux-musl`), indexes PDFs, and scps binary + DB to the remote server configured in `deploy.conf` (gitignored). Uses `rustls` instead of OpenSSL. The musl-gcc path is set via `CC_x86_64_unknown_linux_musl` in `.cargo/config.toml`.
 
 ## Key Dependencies
 
