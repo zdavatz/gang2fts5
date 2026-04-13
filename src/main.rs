@@ -45,6 +45,12 @@ enum Commands {
         #[arg(short, long, default_value = "3000")]
         port: u16,
     },
+    /// Download new PDFs and update the database
+    Update {
+        /// Directory containing PDF files
+        #[arg(short, long, default_value = "pdf")]
+        pdf_dir: String,
+    },
     /// Build database and deploy binary + DB to remote server
     Deploy {
         /// Directory containing PDF files
@@ -891,6 +897,27 @@ async fn main() -> Result<()> {
         }
         Commands::Serve { port } => {
             start_server(&cli.db, *port).await?;
+        }
+        Commands::Update { pdf_dir } => {
+            // Download new PDFs
+            println!("Downloading new PDFs...");
+            let status = std::process::Command::new("bash")
+                .args(["download_pdfs.sh"])
+                .status()
+                .context("Failed to run download_pdfs.sh")?;
+            if !status.success() {
+                anyhow::bail!("download_pdfs.sh failed");
+            }
+
+            // Index new PDFs into database
+            println!("Indexing PDFs into {}...", &cli.db);
+            let conn = Connection::open(&cli.db)?;
+            init_db(&conn)?;
+            index_pdfs(&conn, pdf_dir)?;
+            populate_metadata(&conn, pdf_dir)?;
+            drop(conn);
+
+            println!("Update complete.");
         }
         Commands::Deploy { pdf_dir } => {
             // Build static release binary (musl, no glibc dependency)

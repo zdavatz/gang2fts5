@@ -31,6 +31,9 @@ export XAI_API_KEY="your-key"
 ./target/release/gang2fts5 serve
 # -> http://localhost:3000
 
+# DB aktualisieren (neue PDFs herunterladen + indexieren)
+./target/release/gang2fts5 update
+
 # Deploy: build, index and scp binary + DB to remote server
 ./target/release/gang2fts5 deploy
 ```
@@ -48,11 +51,8 @@ Der Deploy baut ein statisches Binary (musl target `x86_64-unknown-linux-musl`),
 ### DB aktualisieren (neue Vorträge)
 
 ```bash
-# 1. Neue PDFs herunterladen (bestehende werden übersprungen)
-bash download_pdfs.sh
-
-# 2. Neue PDFs in die DB indexieren (bestehende werden übersprungen)
-./target/release/gang2fts5 index
+# Neue PDFs herunterladen + in DB indexieren (alles in einem Schritt)
+./target/release/gang2fts5 update
 ```
 
 ### Nur DB auf den Server kopieren
