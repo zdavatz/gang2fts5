@@ -45,6 +45,36 @@ DEPLOY_TARGET=user@host:/path/to/deploy/
 
 Der Deploy baut ein statisches Binary (musl target `x86_64-unknown-linux-musl`), das auf jedem x86_64-Linux ohne Abhängigkeiten läuft. Voraussetzung: musl-Toolchain (konfiguriert in `.cargo/config.toml` via `CC_x86_64_unknown_linux_musl`).
 
+### DB aktualisieren (neue Vorträge)
+
+```bash
+# 1. Neue PDFs herunterladen (bestehende werden übersprungen)
+bash download_pdfs.sh
+
+# 2. Neue PDFs in die DB indexieren (bestehende werden übersprungen)
+./target/release/gang2fts5 index
+```
+
+### Nur DB auf den Server kopieren
+
+```bash
+scp ganglion.db user@host:/path/to/deploy/
+```
+
+### Nur Binary auf den Server kopieren
+
+```bash
+scp target/x86_64-unknown-linux-musl/release/gang2fts5 user@host:/path/to/deploy/
+```
+
+Nach dem Kopieren muss der Server-Prozess neu gestartet werden:
+
+```bash
+pkill -f "gang2fts5 serve"
+cd /path/to/deploy
+nohup ./gang2fts5 serve > /tmp/gang2fts5.log 2>&1 &
+```
+
 ### Apache Reverse Proxy (SSL)
 
 Die Datei `gang2fts5-ssl.conf` enthält die Apache-Konfiguration für `ki.ganglion.ch` mit SSL und Reverse Proxy auf `http://localhost:3000`.
