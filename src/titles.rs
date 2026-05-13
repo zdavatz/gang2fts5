@@ -7,6 +7,7 @@ pub struct VortragMeta {
 
 pub fn get_metadata() -> HashMap<u32, VortragMeta> {
     let data: &[(u32, &str, &str)] = &[
+        (629, "Psychische Krankheiten", "07.05.2026"),
         (628, "Erziehungsschäden Teil 4", "21.03.2026"),
         (627, "Erziehungsschäden Teil 3", "21.03.2026"),
         (626, "Erziehungsschäden Teil 2", "21.03.2026"),
