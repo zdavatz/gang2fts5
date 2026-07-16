@@ -55,6 +55,7 @@ cd flyer && cargo build --release && ./target/release/flyer educational_engineer
   - `Doc::para()` — ragged-right wrapping; returns the last baseline so blocks stack without hardcoded offsets
   - `Doc::lines()` — line count, used to pre-compute the facts-box height before its background is drawn
   - `Doc::link()` / `Doc::text_link()` — clickable URI annotations (`LinkAnnotation` + `Actions::uri`), hit box grown to the ascender/descender around the baseline
+  - The facts-box rows are `(label, [(line, is_address)])`; address lines get `MAP_URL`, the tram hint does not. In the band and footer the address is a sub-span of a longer line, so the hit box is placed by measuring the prefix width rather than by splitting the draw call
   - Coordinates are mm with y measured from the page top, flipped to PDF's bottom-left origin at draw time (`PAGE_H - y`)
 - printpdf 0.7 also writes a stray `/Subtype /Link` dict into `/Resources` (a broken `From<LinkAnnotationList>` impl). It carries no `/URI` and is not referenced from the page's `/Annots`, so viewers ignore it — the real annotations are built correctly in `pdf_document.rs`. Verify links with:
   `python3 -c "import pikepdf; [print(a.get('/A',{}).get('/URI')) for a in pikepdf.open('flyer/educational_engineering.pdf').pages[0]['/Annots']]"`

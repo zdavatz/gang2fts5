@@ -106,7 +106,7 @@ cargo build --release
 
 Das Layout wird direkt mit `printpdf` gezeichnet. Die Textbreiten werden mit `ttf-parser` aus den DejaVu-Sans-Metriken gemessen, damit der Zeilenumbruch auf echten Glyphenbreiten beruht. Die Schriften werden aus `/usr/share/fonts/dejavu` eingebettet.
 
-Die URLs im Footer (`ganglion.ch`, `adhs.expert`) sind echte PDF-Link-Annotationen und damit anklickbar.
+Alle Links sind echte PDF-Link-Annotationen und damit anklickbar: die URLs im Footer (`ganglion.ch`, `adhs.expert`) sowie die Praxisadresse an allen drei Stellen (Fakten-Box, grüner Balken, Footer), die auf Google Maps zeigt (`MAP_URL` in `flyer/src/main.rs`).
 
 Der fertige Flyer liegt als `flyer/educational_engineering.pdf` im Repo.
 

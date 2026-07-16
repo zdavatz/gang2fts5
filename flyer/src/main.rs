@@ -15,6 +15,10 @@ const INK: (f32, f32, f32) = (0.110, 0.110, 0.110);
 const GREY: (f32, f32, f32) = (0.353, 0.353, 0.353);
 const RULE: (f32, f32, f32) = (0.847, 0.867, 0.851);
 
+/// Map link for the practice address. Percent-encoded so the PDF /URI string stays ASCII.
+const MAP_URL: &str =
+    "https://www.google.com/maps/search/?api=1&query=Winterthurerstrasse+52%2C+8006+Z%C3%BCrich";
+
 #[derive(Clone, Copy, PartialEq)]
 enum S {
     Reg = 0,
@@ -457,28 +461,45 @@ fn main() {
     let fsize = 9.0f32;
     let flead = 4.5f32;
 
-    let rows: [(&str, &str); 6] = [
-        ("Zeit", "Jeweils Donnerstag\n17.30 – 19.00 Uhr"),
-        ("Beginn", "29.01.2026"),
+    // (label, [(line, is_part_of_the_address)]) — address lines get the map link.
+    let rows: [(&str, &[(&str, bool)]); 6] = [
+        (
+            "Zeit",
+            &[("Jeweils Donnerstag", false), ("17.30 – 19.00 Uhr", false)],
+        ),
+        ("Beginn", &[("29.01.2026", false)]),
         (
             "Daten",
-            "29.01. · 26.02. · 26.03.\n30.04. · 21.05. · 25.06.\n27.08. · 24.09. · 29.10.\n26.11. · 17.12.2026",
+            &[
+                ("29.01. · 26.02. · 26.03.", false),
+                ("30.04. · 21.05. · 25.06.", false),
+                ("27.08. · 24.09. · 29.10.", false),
+                ("26.11. · 17.12.2026", false),
+            ],
         ),
         (
             "Ort",
-            "Praxis „Zum grünen Haus“\nWinterthurerstrasse 52\n8006 Zürich\n*ab HB Tram Nr. 10 bis Kinkelstrasse*",
+            &[
+                ("Praxis „Zum grünen Haus“", true),
+                ("Winterthurerstrasse 52", true),
+                ("8006 Zürich", true),
+                ("*ab HB Tram Nr. 10 bis Kinkelstrasse*", false),
+            ],
         ),
-        ("Leitung", "Dr. med. Ursula Davatz"),
+        ("Leitung", &[("Dr. med. Ursula Davatz", false)]),
         (
             "Kosten",
-            "400 Franken, aufgeteilt auf die Anzahl Teilnehmer. Die Krankenkasse übernimmt die Kosten – ausser dem Selbstbehalt.",
+            &[(
+                "400 Franken, aufgeteilt auf die Anzahl Teilnehmer. Die Krankenkasse übernimmt die Kosten – ausser dem Selbstbehalt.",
+                false,
+            )],
         ),
     ];
 
     // Pre-compute the box height so the background can be drawn first.
     let mut probe = box_top + pad + 3.4 + 5.4;
-    for (_, dd) in &rows {
-        for l in dd.split('\n') {
+    for (_, lines) in &rows {
+        for (l, _) in lines.iter() {
             probe += d.lines(l, dd_w, fsize, S::Reg) as f32 * flead;
         }
         probe += 1.6;
@@ -492,10 +513,13 @@ fn main() {
     d.text("Die Fakten", tx, fy, 10.5, S::Bold, GREEN);
     fy += 5.4;
 
-    for (dt, dd) in &rows {
+    for (dt, lines) in &rows {
         d.text(dt, tx, fy, fsize, S::Bold, GREEN);
         let mut ly = fy;
-        for l in dd.split('\n') {
+        for (l, is_addr) in lines.iter() {
+            if *is_addr {
+                d.link(dd_x, ly, d.width(l, S::Reg, fsize), fsize, MAP_URL);
+            }
             ly = d.para(l, dd_x, ly, dd_w, fsize, flead, S::Reg, INK);
             ly += flead;
         }
@@ -525,25 +549,31 @@ fn main() {
         S::Reg,
         (1.0, 1.0, 1.0),
     );
-    d.text_center(
-        "Praxis „Zum grünen Haus“ · Winterthurerstrasse 52 · 8006 Zürich · ab HB Tram Nr. 10 bis Kinkelstrasse",
-        cx,
-        band_y + 23.6,
+    // Only the address part is clickable; the tram hint that follows is not an address.
+    let band_addr = "Praxis „Zum grünen Haus“ · Winterthurerstrasse 52 · 8006 Zürich";
+    let band_line = format!("{band_addr} · ab HB Tram Nr. 10 bis Kinkelstrasse");
+    let band_by = band_y + 23.6;
+    d.text_center(&band_line, cx, band_by, 8.8, S::Reg, (0.82, 0.90, 0.84));
+    d.link(
+        cx - d.width(&band_line, S::Reg, 8.8) / 2.0,
+        band_by,
+        d.width(band_addr, S::Reg, 8.8),
         8.8,
-        S::Reg,
-        (0.82, 0.90, 0.84),
+        MAP_URL,
     );
 
     // ---------------- Footer ----------------
     let foot = PAGE_H - 12.0;
     d.hline(M_L, foot - 3.0, 180.0, 0.8, RULE);
-    d.text(
-        "Leitung: Dr. med. Ursula Davatz · Praxis „Zum grünen Haus“, Winterthurerstrasse 52, 8006 Zürich",
-        M_L,
+    let foot_pre = "Leitung: Dr. med. Ursula Davatz · ";
+    let foot_addr = "Praxis „Zum grünen Haus“, Winterthurerstrasse 52, 8006 Zürich";
+    d.text(&format!("{foot_pre}{foot_addr}"), M_L, foot, 8.0, S::Reg, GREY);
+    d.link(
+        M_L + d.width(foot_pre, S::Reg, 8.0),
         foot,
+        d.width(foot_addr, S::Reg, 8.0),
         8.0,
-        S::Reg,
-        GREY,
+        MAP_URL,
     );
     // Right-aligned, clickable. Drawn in green so they read as links.
     let sep = " · ";
