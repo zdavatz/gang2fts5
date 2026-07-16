@@ -517,10 +517,12 @@ fn main() {
         d.text(dt, tx, fy, fsize, S::Bold, GREEN);
         let mut ly = fy;
         for (l, is_addr) in lines.iter() {
+            // Address lines are green + clickable, matching the URLs in the footer.
+            let col = if *is_addr { GREEN } else { INK };
             if *is_addr {
                 d.link(dd_x, ly, d.width(l, S::Reg, fsize), fsize, MAP_URL);
             }
-            ly = d.para(l, dd_x, ly, dd_w, fsize, flead, S::Reg, INK);
+            ly = d.para(l, dd_x, ly, dd_w, fsize, flead, S::Reg, col);
             ly += flead;
         }
         fy = ly + 1.6;
@@ -550,16 +552,20 @@ fn main() {
         (1.0, 1.0, 1.0),
     );
     // Only the address part is clickable; the tram hint that follows is not an address.
+    // Inside the green band the link is marked white — green would vanish on green.
     let band_addr = "Praxis „Zum grünen Haus“ · Winterthurerstrasse 52 · 8006 Zürich";
-    let band_line = format!("{band_addr} · ab HB Tram Nr. 10 bis Kinkelstrasse");
+    let band_tram = " · ab HB Tram Nr. 10 bis Kinkelstrasse";
+    let band_line = format!("{band_addr}{band_tram}");
     let band_by = band_y + 23.6;
-    d.text_center(&band_line, cx, band_by, 8.8, S::Reg, (0.82, 0.90, 0.84));
-    d.link(
-        cx - d.width(&band_line, S::Reg, 8.8) / 2.0,
+    let band_x = cx - d.width(&band_line, S::Reg, 8.8) / 2.0;
+    let addr_w = d.text_link(band_addr, band_x, band_by, 8.8, S::Reg, (1.0, 1.0, 1.0), MAP_URL);
+    d.text(
+        band_tram,
+        band_x + addr_w,
         band_by,
-        d.width(band_addr, S::Reg, 8.8),
         8.8,
-        MAP_URL,
+        S::Reg,
+        (0.82, 0.90, 0.84),
     );
 
     // ---------------- Footer ----------------
@@ -567,12 +573,14 @@ fn main() {
     d.hline(M_L, foot - 3.0, 180.0, 0.8, RULE);
     let foot_pre = "Leitung: Dr. med. Ursula Davatz · ";
     let foot_addr = "Praxis „Zum grünen Haus“, Winterthurerstrasse 52, 8006 Zürich";
-    d.text(&format!("{foot_pre}{foot_addr}"), M_L, foot, 8.0, S::Reg, GREY);
-    d.link(
+    d.text(foot_pre, M_L, foot, 8.0, S::Reg, GREY);
+    d.text_link(
+        foot_addr,
         M_L + d.width(foot_pre, S::Reg, 8.0),
         foot,
-        d.width(foot_addr, S::Reg, 8.0),
         8.0,
+        S::Reg,
+        GREEN,
         MAP_URL,
     );
     // Right-aligned, clickable. Drawn in green so they read as links.
