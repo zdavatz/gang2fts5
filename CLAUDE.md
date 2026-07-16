@@ -40,9 +40,27 @@ bash download_pdfs.sh                            # download all PDFs from gangli
 
 The `deploy` subcommand builds a static musl binary (`x86_64-unknown-linux-musl`), indexes PDFs, and scps binary + DB to the remote server configured in `deploy.conf` (gitignored). Uses `rustls` instead of OpenSSL. The musl-gcc path is set via `CC_x86_64_unknown_linux_musl` in `.cargo/config.toml`.
 
+## Flyer Generator (`flyer/`)
+
+Standalone crate — its own `Cargo.toml` carries an empty `[workspace]` table so it stays out of the root gang2fts5 package. Unrelated to the search app; it generates the one-page A4 German flyer (`flyer/educational_engineering.pdf`) for the "Educational Engineering" parenting group.
+
+```bash
+cd flyer && cargo build --release && ./target/release/flyer educational_engineering.pdf
+```
+
+- **flyer/src/main.rs** — hand-rolled layout engine on `printpdf`:
+  - `Doc::width()` — text measurement from `ttf-parser` glyph advances; unkerned, which matches how printpdf renders, so measured width equals drawn width
+  - `Doc::parse()` — `**bold**` / `*italic*` inline markup → styled runs
+  - `Doc::words()` — splits runs into whitespace-delimited words that may mix styles, so punctuation stays glued across a style boundary (`**Bauart**:` must not render as `Bauart :`)
+  - `Doc::para()` — ragged-right wrapping; returns the last baseline so blocks stack without hardcoded offsets
+  - `Doc::lines()` — line count, used to pre-compute the facts-box height before its background is drawn
+  - Coordinates are mm with y measured from the page top, flipped to PDF's bottom-left origin at draw time (`PAGE_H - y`)
+- Fonts embedded from `/usr/share/fonts/dejavu` (Sans, Bold, Oblique) for full umlaut coverage. Not subsetted, hence the ~2 MB output.
+
 ## Key Dependencies
 
 - `rusqlite` (bundled SQLite with FTS5), `pdf-extract`, `axum`, `tokio`, `reqwest` (streaming, rustls-tls), `clap`, `regex`, `async-stream`
+- `flyer/` only: `printpdf`, `ttf-parser`
 
 ## Environment
 

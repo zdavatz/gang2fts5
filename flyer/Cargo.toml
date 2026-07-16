@@ -1,0 +1,11 @@
+[package]
+name = "flyer"
+version = "0.1.0"
+edition = "2024"
+
+# Standalone: kept out of the root gang2fts5 package's build.
+[workspace]
+
+[dependencies]
+printpdf = "0.7"
+ttf-parser = "0.25.1"

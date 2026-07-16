@@ -94,6 +94,20 @@ sudo certbot certonly --apache -d ki.ganglion.ch
 sudo systemctl restart apache2
 ```
 
+## Flyer-Generator
+
+Das Verzeichnis `flyer/` enthält ein eigenständiges Rust-Programm, das einen einseitigen A4-Flyer als PDF erzeugt — für die Erziehungsgruppe unter dem Titel „Educational Engineering“.
+
+```bash
+cd flyer
+cargo build --release
+./target/release/flyer educational_engineering.pdf
+```
+
+Das Layout wird direkt mit `printpdf` gezeichnet. Die Textbreiten werden mit `ttf-parser` aus den DejaVu-Sans-Metriken gemessen, damit der Zeilenumbruch auf echten Glyphenbreiten beruht. Die Schriften werden aus `/usr/share/fonts/dejavu` eingebettet.
+
+Der fertige Flyer liegt als `flyer/educational_engineering.pdf` im Repo.
+
 ## Weiterführende Informationen
 
 - [Ganglion-Podcast auf Spotify](https://open.spotify.com/show/67sgy1aLTLXKCWkmgoqJ46)

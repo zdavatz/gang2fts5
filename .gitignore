@@ -1,4 +1,5 @@
 /target
+/flyer/target
 /pdf/*.pdf
 *.db
 *.db.bak
