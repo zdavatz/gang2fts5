@@ -54,7 +54,10 @@ cd flyer && cargo build --release && ./target/release/flyer educational_engineer
   - `Doc::words()` — splits runs into whitespace-delimited words that may mix styles, so punctuation stays glued across a style boundary (`**Bauart**:` must not render as `Bauart :`)
   - `Doc::para()` — ragged-right wrapping; returns the last baseline so blocks stack without hardcoded offsets
   - `Doc::lines()` — line count, used to pre-compute the facts-box height before its background is drawn
+  - `Doc::link()` / `Doc::text_link()` — clickable URI annotations (`LinkAnnotation` + `Actions::uri`), hit box grown to the ascender/descender around the baseline
   - Coordinates are mm with y measured from the page top, flipped to PDF's bottom-left origin at draw time (`PAGE_H - y`)
+- printpdf 0.7 also writes a stray `/Subtype /Link` dict into `/Resources` (a broken `From<LinkAnnotationList>` impl). It carries no `/URI` and is not referenced from the page's `/Annots`, so viewers ignore it — the real annotations are built correctly in `pdf_document.rs`. Verify links with:
+  `python3 -c "import pikepdf; [print(a.get('/A',{}).get('/URI')) for a in pikepdf.open('flyer/educational_engineering.pdf').pages[0]['/Annots']]"`
 - Fonts embedded from `/usr/share/fonts/dejavu` (Sans, Bold, Oblique) for full umlaut coverage. Not subsetted, hence the ~2 MB output.
 
 ## Key Dependencies

@@ -234,6 +234,35 @@ impl Doc {
         cy
     }
 
+    /// Register a clickable URI annotation over a text line.
+    /// `y` is the text baseline measured from the page top; the hit box is grown
+    /// to roughly the ascender/descender so the whole glyph run is clickable.
+    fn link(&self, x: f32, y: f32, w: f32, size: f32, url: &str) {
+        let asc = size * PT * 0.85;
+        let desc = size * PT * 0.28;
+        self.layer.add_link_annotation(LinkAnnotation::new(
+            Rect::new(
+                Mm(x),
+                Mm(PAGE_H - y - desc),
+                Mm(x + w),
+                Mm(PAGE_H - y + asc),
+            ),
+            // [0 0 0] = no visible border drawn by the viewer.
+            Some(BorderArray::Solid([0.0, 0.0, 0.0])),
+            Some(ColorArray::Transparent),
+            Actions::uri(url.to_string()),
+            Some(HighlightingMode::Invert),
+        ));
+    }
+
+    /// Draw a string and make it clickable. Returns its width.
+    fn text_link(&self, t: &str, x: f32, y: f32, size: f32, s: S, c: (f32, f32, f32), url: &str) -> f32 {
+        let w = self.width(t, s, size);
+        self.text(t, x, y, size, s, c);
+        self.link(x, y, w, size, url);
+        w
+    }
+
     /// Horizontally centred single line.
     fn text_center(&self, t: &str, cx: f32, y: f32, size: f32, s: S, c: (f32, f32, f32)) {
         let w = self.width(t, s, size);
@@ -516,9 +545,27 @@ fn main() {
         S::Reg,
         GREY,
     );
-    let r = "ganglion.ch · adhs.expert";
-    let rwid = d.width(r, S::Reg, 8.0);
-    d.text(r, PAGE_W - M_L - rwid, foot, 8.0, S::Reg, GREY);
+    // Right-aligned, clickable. Drawn in green so they read as links.
+    let sep = " · ";
+    let sites = [
+        ("ganglion.ch", "https://ganglion.ch"),
+        ("adhs.expert", "https://adhs.expert"),
+    ];
+    let sep_w = d.width(sep, S::Reg, 8.0);
+    let total: f32 = sites
+        .iter()
+        .map(|(t, _)| d.width(t, S::Reg, 8.0))
+        .sum::<f32>()
+        + sep_w * (sites.len() - 1) as f32;
+
+    let mut fx = PAGE_W - M_L - total;
+    for (i, (label, url)) in sites.iter().enumerate() {
+        if i > 0 {
+            d.text(sep, fx, foot, 8.0, S::Reg, GREY);
+            fx += sep_w;
+        }
+        fx += d.text_link(label, fx, foot, 8.0, S::Reg, GREEN, url);
+    }
 
     let out = std::env::args()
         .nth(1)
