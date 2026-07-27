@@ -42,7 +42,7 @@ The `deploy` subcommand builds a static musl binary (`x86_64-unknown-linux-musl`
 
 ## Flyer Generator (`flyer/`)
 
-Standalone crate — its own `Cargo.toml` carries an empty `[workspace]` table so it stays out of the root gang2fts5 package. Unrelated to the search app; it generates the one-page A4 German flyer (`flyer/educational_engineering.pdf`) for the "Educational Engineering" parenting group.
+Standalone crate — its own `Cargo.toml` carries an empty `[workspace]` table so it stays out of the root gang2fts5 package. Unrelated to the search app; it generates the one-page A4 German flyer (`flyer/educational_engineering.pdf`) for Dr. Davatz's paid teacher-training course "Weiterbildungskurs im Umgang mit ADHS- und ADS-Kindern und Jugendlichen" (target audience: state educators — teachers, kindergarten, after-school staff). "Educational Engineering" is only an English tagline in the header; the authoritative course content (dates, CHF 1'200 fee, registration by e-mail) comes from ganglion.ch `popup_kurse.php?kurs_id=47` — do not confuse it with the free relatives'/parents' group (`kurs_id=46`, Mondays, registration required).
 
 ```bash
 cd flyer && cargo build --release && ./target/release/flyer educational_engineering.pdf
@@ -55,7 +55,7 @@ cd flyer && cargo build --release && ./target/release/flyer educational_engineer
   - `Doc::para()` — ragged-right wrapping; returns the last baseline so blocks stack without hardcoded offsets
   - `Doc::lines()` — line count, used to pre-compute the facts-box height before its background is drawn
   - `Doc::link()` / `Doc::text_link()` — clickable URI annotations (`LinkAnnotation` + `Actions::uri`), hit box grown to the ascender/descender around the baseline
-  - The facts-box rows are `(label, [(line, is_address)])`; address lines get `MAP_URL`, the tram hint does not. In the band and footer the address is a sub-span of a longer line, so the hit box is placed by measuring the prefix width rather than by splitting the draw call
+  - The "Auf einen Blick" box rows are `(label, [(line, is_address)])` (Für wen / Leitung / Daten / Ort / Kosten); address lines get `MAP_URL`. The band's e-mail and the footer's four segments (address→`MAP_URL`, phone→`TEL_URL`, e-mail→`MAIL_URL`, web→`WEB_URL`) are each drawn with `text_link`; the footer contact line is centred by pre-measuring total width and stepping segment-by-segment
   - Coordinates are mm with y measured from the page top, flipped to PDF's bottom-left origin at draw time (`PAGE_H - y`)
 - printpdf 0.7 also writes a stray `/Subtype /Link` dict into `/Resources` (a broken `From<LinkAnnotationList>` impl). It carries no `/URI` and is not referenced from the page's `/Annots`, so viewers ignore it — the real annotations are built correctly in `pdf_document.rs`. Verify links with:
   `python3 -c "import pikepdf; [print(a.get('/A',{}).get('/URI')) for a in pikepdf.open('flyer/educational_engineering.pdf').pages[0]['/Annots']]"`

@@ -1,4 +1,4 @@
-// Generates a one-page A4 flyer (German) for the "Educational Engineering" group.
+// Generates a one-page A4 flyer (German) for Dr. Davatz's ADHS/ADS teacher-training course.
 use printpdf::path::{PaintMode, WindingOrder};
 use printpdf::*;
 use std::fs::File;
@@ -14,10 +14,15 @@ const GREEN_BG: (f32, f32, f32) = (0.933, 0.957, 0.937);
 const INK: (f32, f32, f32) = (0.110, 0.110, 0.110);
 const GREY: (f32, f32, f32) = (0.353, 0.353, 0.353);
 const RULE: (f32, f32, f32) = (0.847, 0.867, 0.851);
+const WHITE: (f32, f32, f32) = (1.0, 1.0, 1.0);
+const PALE: (f32, f32, f32) = (0.82, 0.90, 0.84);
 
 /// Map link for the practice address. Percent-encoded so the PDF /URI string stays ASCII.
 const MAP_URL: &str =
     "https://www.google.com/maps/search/?api=1&query=Winterthurerstrasse+52%2C+8006+Z%C3%BCrich";
+const WEB_URL: &str = "https://www.ganglion.ch";
+const MAIL_URL: &str = "mailto:sekretariat@ganglion.ch";
+const TEL_URL: &str = "tel:+41582550115";
 
 #[derive(Clone, Copy, PartialEq)]
 enum S {
@@ -291,7 +296,7 @@ fn face(path: &str) -> ttf_parser::Face<'static> {
 
 fn main() {
     let (pdf, page, layer) = PdfDocument::new(
-        "Educational Engineering – Gruppe für Erziehungspersonen",
+        "Weiterbildungskurs im Umgang mit ADHS- und ADS-Kindern und Jugendlichen",
         Mm(PAGE_W),
         Mm(PAGE_H),
         "Inhalt",
@@ -320,73 +325,89 @@ fn main() {
     };
 
     // ---------------- Header ----------------
-    let mut y = 20.0;
+    let mut y = 16.5;
     d.tracked(
-        "GRUPPE FÜR ELTERN UND LEHRPERSONEN",
+        "PSYCHIATRISCHE PRAXIS DR. MED. URSULA DAVATZ",
         M_L,
         y,
-        7.6,
+        7.2,
         0.55,
         S::Bold,
         GREEN,
     );
+    y += 5.2;
+    d.tracked(
+        "KOMPETENZZENTRUM FÜR AD(H)S & FOLGEKRANKHEITEN",
+        M_L,
+        y,
+        7.2,
+        0.55,
+        S::Bold,
+        GREY,
+    );
 
-    y += 11.5;
-    d.text("Educational Engineering", M_L, y, 25.0, S::Bold, GREEN);
-    y += 9.8;
-    d.text("Erziehung ist Konstruktionsarbeit.", M_L, y, 25.0, S::Bold, INK);
+    y += 13.5;
+    d.text("Weiterbildungskurs", M_L, y, 27.0, S::Bold, GREEN);
+    y += 10.6;
+    y = d.para(
+        "im Umgang mit ADHS- und ADS-Kindern und Jugendlichen",
+        M_L,
+        y,
+        180.0,
+        16.0,
+        7.6,
+        S::Bold,
+        INK,
+    );
 
-    y += 7.6;
-    d.para(
-        "Werkzeuge statt Ratschläge – für den Alltag mit AD(H)S-Kindern und Jugendlichen.",
+    y += 6.4;
+    d.text("Educational Engineering", M_L, y, 11.0, S::Ital, GREEN);
+    d.text(
+        " – Erziehung ist Konstruktionsarbeit.",
+        M_L + d.width("Educational Engineering", S::Ital, 11.0),
+        y,
+        11.0,
+        S::Ital,
+        GREY,
+    );
+
+    y += 4.0;
+    d.hline(M_L, y, 180.0, 2.5, GREEN);
+
+    // ---------------- Lead (course goal) ----------------
+    y += 7.0;
+    y = d.para(
+        "**Kursziel.** Sie lernen den kompetenten Umgang mit neurodiversen Kindern und \
+         Jugendlichen, damit eine Folgestörung möglichst verhindert werden kann. Statt Schuldige \
+         zu suchen, verstehen wir die Kräfte im System aus Kind, Familie und Schule – und stellen \
+         sie präzise ein.",
         M_L,
         y,
         180.0,
         11.5,
         5.6,
         S::Reg,
-        GREY,
-    );
-
-    y += 4.2;
-    d.hline(M_L, y, 180.0, 2.5, GREEN);
-
-    // ---------------- Lead ----------------
-    y += 6.2;
-    y = d.para(
-        "Ein Ingenieur, dem eine Brücke schwingt, sucht keinen Schuldigen. Er sucht die Kräfte, \
-         die auf sie wirken. **Educational Engineering** überträgt diese Haltung auf die Erziehung: \
-         Wir fragen nicht, wer versagt hat – wir fragen, wie das System aus Kind, Familie und Schule \
-         konstruiert ist und an welcher Stelle eine kleine, präzise Änderung die grösste Wirkung hat.",
-        M_L,
-        y,
-        180.0,
-        10.4,
-        5.0,
-        S::Reg,
         INK,
     );
 
     // ---------------- Columns ----------------
-    let col_top = y + 9.0;
+    let col_top = y + 12.0;
     let lx = M_L;
-    let lw = 102.0;
+    let lw = 100.0;
     let rx = M_L + lw + 7.0;
-    let rw = 71.0;
+    let rw = 73.0;
 
-    let body = 9.6f32;
-    let lead = 4.85f32;
+    let body = 10.2f32;
+    let lead = 5.45f32;
 
-    // -- left column --
+    // -- left column: course flow + themes --
     let mut y = col_top;
-    d.text("Warum gerade bei AD(H)S?", lx, y, 10.5, S::Bold, GREEN);
-    y += 5.2;
+    d.text("Kursablauf", lx, y, 11.0, S::Bold, GREEN);
+    y += 5.8;
     y = d.para(
-        "Kinder und Jugendliche mit AD(H)S haben ein spezielles Temperament mit besonderen \
-         Veranlagungen und Talenten. Sie sind keine fehlerhafte Konstruktion – sie sind eine \
-         **Hochleistungsmaschine mit anderer Bauart**: schnell, sprunghaft, kreativ, reizoffen. \
-         Mit Standardmethoden gefahren, überhitzt sie. Richtig verstanden und richtig eingestellt, \
-         läuft sie zu einer Form auf, die dem erzieherischen Umfeld sonst verborgen bleibt.",
+        "Zu Beginn jedes Kurstages gibt es einen theoretischen Input der Kursleiterin, gefolgt von \
+         der praktischen Anwendung anhand von Fallbeispielen und Diskussionen über Lösungsansätze. \
+         Die Themen umfassen:",
         lx,
         y,
         lw,
@@ -395,114 +416,82 @@ fn main() {
         S::Reg,
         INK,
     );
-    y += lead + 1.4;
-    y = d.para(
-        "Genau darin liegt die grosse Herausforderung für das erzieherische Umfeld – und genau \
-         dort setzt diese Gruppe an.",
-        lx,
-        y,
-        lw,
-        body,
-        lead,
-        S::Reg,
-        INK,
-    );
+    y += lead + 3.8;
 
-    y += 8.4;
-    d.text("Die Arbeitsweise", lx, y, 10.5, S::Bold, GREEN);
-    y += 5.4;
-
-    let steps = [
-        "**Analysieren statt bewerten.** Wir zerlegen die Situation in ihre Bestandteile, bevor \
-         wir sie beurteilen.",
-        "**Das System sehen.** Verhalten entsteht zwischen Menschen, nicht in einem Kind allein. \
-         Wer die Umgebung ändert, ändert das Verhalten.",
-        "**Strategien konstruieren.** Gemeinsam mit der Fachperson, Dr. med. Ursula Davatz, \
-         erarbeiten wir konkrete Problemlösungsstrategien – zugeschnitten auf Ihre reale Situation.",
-        "**Testen und nachjustieren.** Sie setzen die Strategie im Alltag um und bringen die \
-         Erfahrung zurück in die Gruppe. Jede Sitzung ist eine neue Iteration.",
+    let themes = [
+        "Einführung in ADHS, ADS und ASS sowie persönliche Erziehungserfahrungen.",
+        "Konflikte im Umgang mit betroffenen Kindern und Lösungsstrategien (Do’s and Don’ts).",
+        "Gruppendynamik und Konfliktlösung im Klassenzimmer und auf dem Pausenplatz.",
+        "Umgang mit Eltern von ADHS-, ADS- und ASS-Kindern.",
+        "Herausforderungen der integrativen Schule mit betroffenen Kindern.",
+        "Vorbeugung von Folgekrankheiten durch angemessenen Umgang mit neurodiversen Kindern.",
     ];
-
-    for (i, s) in steps.iter().enumerate() {
-        let r = 2.75;
-        let cy = y - 1.15;
-        d.circle(lx + r, cy, r, GREEN);
-        let n = (i + 1).to_string();
-        let nw = d.width(&n, S::Bold, 7.6);
-        d.text(&n, lx + r - nw / 2.0, cy + 1.0, 7.6, S::Bold, (1.0, 1.0, 1.0));
-        y = d.para(s, lx + 8.6, y, lw - 8.6, body, lead, S::Reg, INK);
-        y += lead + 1.2;
+    for t in themes.iter() {
+        d.circle(lx + 1.2, y - 1.15, 1.2, GREEN);
+        y = d.para(t, lx + 6.2, y, lw - 6.2, body, lead, S::Reg, INK);
+        y += lead + 3.0;
     }
-
-    y += 3.6;
-    d.text("Was Sie mitnehmen", lx, y, 10.5, S::Bold, GREEN);
-    y += 5.2;
-    let left_end = d.para(
-        "Die Erfahrung von Erziehungspersonen, die dieselben Kräfte kennen – und Strategien, die \
-         nicht in der Theorie bleiben, sondern am nächsten Morgen am Küchentisch oder im \
-         Schulzimmer funktionieren müssen.",
-        lx,
-        y,
-        lw,
-        body,
-        lead,
-        S::Reg,
-        INK,
-    );
+    let left_end = y - 3.0;
 
     // -- right column: facts box --
-    let pad = 4.0;
+    let pad = 4.5;
     let bx = rx;
-    let box_top = col_top - 5.6;
+    let box_top = col_top - 6.0;
     let tx = bx + pad;
     let dt_w = 16.0;
     let dd_x = tx + dt_w + 2.0;
     let dd_w = bx + rw - pad - dd_x;
-    let fsize = 9.0f32;
-    let flead = 4.5f32;
+    let fsize = 8.8f32;
+    let flead = 4.8f32;
 
     // (label, [(line, is_part_of_the_address)]) — address lines get the map link.
-    let rows: [(&str, &[(&str, bool)]); 6] = [
+    let rows: [(&str, &[(&str, bool)]); 5] = [
         (
-            "Zeit",
-            &[("Jeweils Donnerstag", false), ("17.30 – 19.00 Uhr", false)],
+            "Für wen",
+            &[(
+                "Staatliche Erziehungspersonen wie Lehrer/innen, Kindergärtner/innen und Hortleiter/innen.",
+                false,
+            )],
         ),
-        ("Beginn", &[("29.01.2026", false)]),
+        (
+            "Leitung",
+            &[(
+                "Frau Dr. med. Ursula Davatz, Fachärztin FMH für Psychiatrie und Psychotherapie, Familientherapeutin nach Murray Bowen.",
+                false,
+            )],
+        ),
         (
             "Daten",
             &[
-                ("29.01. · 26.02. · 26.03.", false),
-                ("30.04. · 21.05. · 25.06.", false),
-                ("27.08. · 24.09. · 29.10.", false),
-                ("26.11. · 17.12.2026", false),
+                ("26.08. · 23.09. · 21.10.2026", false),
+                ("25.11.2026", false),
+                ("24.03. · 19.05.2027", false),
+                ("*Jeweils 14.00 – 18.00 Uhr*", false),
             ],
         ),
         (
             "Ort",
             &[
-                ("Praxis „Zum grünen Haus“", true),
-                ("Winterthurerstrasse 52", true),
-                ("8006 Zürich", true),
-                ("*ab HB Tram Nr. 10 bis Kinkelstrasse*", false),
+                ("Psychiatrische Praxis Dr. med. Ursula Davatz", true),
+                ("Winterthurerstrasse 52, 8006 Zürich", true),
             ],
         ),
-        ("Leitung", &[("Dr. med. Ursula Davatz", false)]),
         (
             "Kosten",
             &[(
-                "400 Franken, aufgeteilt auf die Anzahl Teilnehmer. Die Krankenkasse übernimmt die Kosten – ausser dem Selbstbehalt.",
+                "CHF 1’200.00 pro Person (6 Daten). Durchführung ab 6 Personen, max. 12 Teilnehmer.",
                 false,
             )],
         ),
     ];
 
     // Pre-compute the box height so the background can be drawn first.
-    let mut probe = box_top + pad + 3.4 + 5.4;
+    let mut probe = box_top + pad + 3.4 + 5.6;
     for (_, lines) in &rows {
         for (l, _) in lines.iter() {
             probe += d.lines(l, dd_w, fsize, S::Reg) as f32 * flead;
         }
-        probe += 1.6;
+        probe += 2.6;
     }
     let box_h = probe - box_top + 2.0;
 
@@ -510,8 +499,8 @@ fn main() {
     d.rect(bx, box_top, 0.9, box_h, GREEN);
 
     let mut fy = box_top + pad + 3.4;
-    d.text("Die Fakten", tx, fy, 10.5, S::Bold, GREEN);
-    fy += 5.4;
+    d.text("Auf einen Blick", tx, fy, 11.0, S::Bold, GREEN);
+    fy += 5.6;
 
     for (dt, lines) in &rows {
         d.text(dt, tx, fy, fsize, S::Bold, GREEN);
@@ -525,84 +514,64 @@ fn main() {
             ly = d.para(l, dd_x, ly, dd_w, fsize, flead, S::Reg, col);
             ly += flead;
         }
-        fy = ly + 1.6;
+        fy = ly + 2.6;
     }
 
     // ---------------- Call to action ----------------
     // Sit below whichever column runs longer, rather than at a guessed offset.
-    let band_h = 28.0;
-    let band_y = left_end.max(box_top + box_h) + 7.5;
+    let band_h = 31.0;
+    let band_y = left_end.max(box_top + box_h) + 10.5;
     let cx = PAGE_W / 2.0;
     d.rect(M_L, band_y, 180.0, band_h, GREEN);
 
+    d.text_center("Anmeldung", cx, band_y + 10.4, 14.0, S::Bold, WHITE);
+    // Clickable e-mail, centred. White so it stays visible on the green band.
+    let mail = "sekretariat@ganglion.ch";
+    let mw = d.width(mail, S::Bold, 13.0);
+    d.text_link(mail, cx - mw / 2.0, band_y + 19.2, 13.0, S::Bold, WHITE, MAIL_URL);
     d.text_center(
-        "Keine Anmeldung. Kein Formular. Sie kommen einfach vorbei.",
+        "Der Kurs findet ab sechs Personen statt · höchstens zwölf Teilnehmer",
         cx,
-        band_y + 9.8,
-        13.5,
-        S::Bold,
-        (1.0, 1.0, 1.0),
-    );
-    d.text_center(
-        "Erster Termin: Donnerstag, 29. Januar 2026, 17.30 – 19.00 Uhr",
-        cx,
-        band_y + 17.4,
-        10.4,
+        band_y + 26.0,
+        8.6,
         S::Reg,
-        (1.0, 1.0, 1.0),
-    );
-    // Only the address part is clickable; the tram hint that follows is not an address.
-    // Inside the green band the link is marked white — green would vanish on green.
-    let band_addr = "Praxis „Zum grünen Haus“ · Winterthurerstrasse 52 · 8006 Zürich";
-    let band_tram = " · ab HB Tram Nr. 10 bis Kinkelstrasse";
-    let band_line = format!("{band_addr}{band_tram}");
-    let band_by = band_y + 23.6;
-    let band_x = cx - d.width(&band_line, S::Reg, 8.8) / 2.0;
-    let addr_w = d.text_link(band_addr, band_x, band_by, 8.8, S::Reg, (1.0, 1.0, 1.0), MAP_URL);
-    d.text(
-        band_tram,
-        band_x + addr_w,
-        band_by,
-        8.8,
-        S::Reg,
-        (0.82, 0.90, 0.84),
+        PALE,
     );
 
     // ---------------- Footer ----------------
-    let foot = PAGE_H - 12.0;
-    d.hline(M_L, foot - 3.0, 180.0, 0.8, RULE);
-    let foot_pre = "Leitung: Dr. med. Ursula Davatz · ";
-    let foot_addr = "Praxis „Zum grünen Haus“, Winterthurerstrasse 52, 8006 Zürich";
-    d.text(foot_pre, M_L, foot, 8.0, S::Reg, GREY);
-    d.text_link(
-        foot_addr,
-        M_L + d.width(foot_pre, S::Reg, 8.0),
-        foot,
-        8.0,
+    let foot_rule = PAGE_H - 19.0;
+    d.hline(M_L, foot_rule, 180.0, 0.8, RULE);
+    d.text_center(
+        "Psychiatrische Praxis Dr. med. Ursula Davatz · Kompetenzzentrum für AD(H)S & Folgekrankheiten",
+        cx,
+        foot_rule + 5.4,
+        7.6,
         S::Reg,
-        GREEN,
-        MAP_URL,
+        GREY,
     );
-    // Right-aligned, clickable. Drawn in green so they read as links.
-    let sep = " · ";
-    let sites = [
-        ("ganglion.ch", "https://ganglion.ch"),
-        ("adhs.expert", "https://adhs.expert"),
+    // Contact line: each segment is a clickable link (map, phone, mail, web).
+    let contact: [(&str, &str); 4] = [
+        ("Winterthurerstrasse 52, 8006 Zürich", MAP_URL),
+        ("Tel. 058 255 01 15", TEL_URL),
+        ("sekretariat@ganglion.ch", MAIL_URL),
+        ("www.ganglion.ch", WEB_URL),
     ];
-    let sep_w = d.width(sep, S::Reg, 8.0);
-    let total: f32 = sites
+    let csep = "   ·   ";
+    let csize = 8.2f32;
+    let csep_w = d.width(csep, S::Reg, csize);
+    let ctotal: f32 = contact
         .iter()
-        .map(|(t, _)| d.width(t, S::Reg, 8.0))
+        .map(|(t, _)| d.width(t, S::Bold, csize))
         .sum::<f32>()
-        + sep_w * (sites.len() - 1) as f32;
-
-    let mut fx = PAGE_W - M_L - total;
-    for (i, (label, url)) in sites.iter().enumerate() {
+        + csep_w * (contact.len() - 1) as f32;
+    let mut fx = cx - ctotal / 2.0;
+    let cfy = foot_rule + 11.2;
+    for (i, (label, url)) in contact.iter().enumerate() {
         if i > 0 {
-            d.text(sep, fx, foot, 8.0, S::Reg, GREY);
-            fx += sep_w;
+            d.text(csep, fx, cfy, csize, S::Reg, GREY);
+            fx += csep_w;
         }
-        fx += d.text_link(label, fx, foot, 8.0, S::Reg, GREEN, url);
+        fx += d.text_link(label, fx, cfy, csize, S::Bold, GREEN, url);
     }
 
     let out = std::env::args()

@@ -96,7 +96,7 @@ sudo systemctl restart apache2
 
 ## Flyer-Generator
 
-Das Verzeichnis `flyer/` enthält ein eigenständiges Rust-Programm, das einen einseitigen A4-Flyer als PDF erzeugt — für die Erziehungsgruppe unter dem Titel „Educational Engineering“.
+Das Verzeichnis `flyer/` enthält ein eigenständiges Rust-Programm, das einen einseitigen A4-Flyer als PDF erzeugt — für den Weiterbildungskurs von Dr. med. Ursula Davatz „im Umgang mit ADHS- und ADS-Kindern und Jugendlichen“ (Zielgruppe: staatliche Erziehungspersonen wie Lehr-, Kindergarten- und Hortpersonal). „Educational Engineering“ dient als englischer Aufhänger.
 
 ```bash
 cd flyer
@@ -106,7 +106,7 @@ cargo build --release
 
 Das Layout wird direkt mit `printpdf` gezeichnet. Die Textbreiten werden mit `ttf-parser` aus den DejaVu-Sans-Metriken gemessen, damit der Zeilenumbruch auf echten Glyphenbreiten beruht. Die Schriften werden aus `/usr/share/fonts/dejavu` eingebettet.
 
-Alle Links sind echte PDF-Link-Annotationen und damit anklickbar: die URLs im Footer (`ganglion.ch`, `adhs.expert`) sowie die Praxisadresse an allen drei Stellen (Fakten-Box, grüner Balken, Footer), die auf Google Maps zeigt (`MAP_URL` in `flyer/src/main.rs`).
+Alle Links sind echte PDF-Link-Annotationen und damit anklickbar: im Footer die Praxisadresse (Google Maps), die Telefonnummer (`tel:`), die E-Mail (`mailto:`) und `www.ganglion.ch`; zusätzlich die E-Mail im Anmelde-Balken und die Adresse in der „Auf einen Blick“-Box. Die Ziel-URLs stehen als Konstanten (`MAP_URL`, `WEB_URL`, `MAIL_URL`, `TEL_URL`) am Kopf von `flyer/src/main.rs`.
 
 Der fertige Flyer liegt als `flyer/educational_engineering.pdf` im Repo.
 
