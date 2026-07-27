@@ -379,8 +379,8 @@ fn main() {
     y = d.para(
         "**Kursziel.** Sie lernen den kompetenten Umgang mit neurodiversen Kindern und \
          Jugendlichen, damit eine Folgestörung möglichst verhindert werden kann. Statt Schuldige \
-         zu suchen, verstehen wir die Kräfte im System aus Kind, Familie und Schule – und stellen \
-         sie präzise ein.",
+         zu suchen, verstehen wir die Kräfte im System aus Kind, Familie und Schule, ordnen sie \
+         ein und vermitteln zwischen den unterschiedlichen Gesichtspunkten.",
         M_L,
         y,
         180.0,
