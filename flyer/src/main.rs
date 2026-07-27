@@ -574,9 +574,11 @@ fn main() {
         fx += d.text_link(label, fx, cfy, csize, S::Bold, GREEN, url);
     }
 
+    // Defaults to the _2 file so a plain `cargo run` regenerates the course flyer
+    // without clobbering the retained old parenting-group flyer (educational_engineering.pdf).
     let out = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "educational_engineering.pdf".to_string());
+        .unwrap_or_else(|| "educational_engineering_2.pdf".to_string());
     pdf.save(&mut BufWriter::new(File::create(&out).unwrap()))
         .unwrap();
     println!("wrote {out}");

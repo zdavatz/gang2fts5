@@ -42,10 +42,15 @@ The `deploy` subcommand builds a static musl binary (`x86_64-unknown-linux-musl`
 
 ## Flyer Generator (`flyer/`)
 
-Standalone crate — its own `Cargo.toml` carries an empty `[workspace]` table so it stays out of the root gang2fts5 package. Unrelated to the search app; it generates the one-page A4 German flyer (`flyer/educational_engineering.pdf`) for Dr. Davatz's paid teacher-training course "Weiterbildungskurs im Umgang mit ADHS- und ADS-Kindern und Jugendlichen" (target audience: state educators — teachers, kindergarten, after-school staff). "Educational Engineering" is only an English tagline in the header; the authoritative course content (dates, CHF 1'200 fee, registration by e-mail) comes from ganglion.ch `popup_kurse.php?kurs_id=47` — do not confuse it with the free relatives'/parents' group (`kurs_id=46`, Mondays, registration required).
+Standalone crate — its own `Cargo.toml` carries an empty `[workspace]` table so it stays out of the root gang2fts5 package. Unrelated to the search app. Two flyer PDFs live in `flyer/`:
+
+- `educational_engineering.pdf` — the older flyer for the **free relatives'/parenting group** (Erziehungsgruppe). Retained; its generator source is in git history at commit `8abed8b`. Not produced by the current `main.rs`.
+- `educational_engineering_2.pdf` — the current output of `flyer/src/main.rs`: the one-page A4 German flyer for Dr. Davatz's **paid teacher-training course** "Weiterbildungskurs im Umgang mit ADHS- und ADS-Kindern und Jugendlichen" (target audience: state educators — teachers, kindergarten, after-school staff). "Educational Engineering" is only an English tagline in the header; the authoritative course content (dates, CHF 1'200 fee, registration by e-mail) comes from ganglion.ch `popup_kurse.php?kurs_id=47` — do not confuse it with the free group (`kurs_id=46`, Mondays, registration required).
+
+`main.rs` defaults its output to `educational_engineering_2.pdf` (overridable by a CLI arg) so a plain rebuild never clobbers the retained old flyer.
 
 ```bash
-cd flyer && cargo build --release && ./target/release/flyer educational_engineering.pdf
+cd flyer && cargo build --release && ./target/release/flyer   # -> educational_engineering_2.pdf
 ```
 
 - **flyer/src/main.rs** — hand-rolled layout engine on `printpdf`:
@@ -58,7 +63,7 @@ cd flyer && cargo build --release && ./target/release/flyer educational_engineer
   - The "Auf einen Blick" box rows are `(label, [(line, is_address)])` (Für wen / Leitung / Daten / Ort / Kosten); address lines get `MAP_URL`. The band's e-mail and the footer's four segments (address→`MAP_URL`, phone→`TEL_URL`, e-mail→`MAIL_URL`, web→`WEB_URL`) are each drawn with `text_link`; the footer contact line is centred by pre-measuring total width and stepping segment-by-segment
   - Coordinates are mm with y measured from the page top, flipped to PDF's bottom-left origin at draw time (`PAGE_H - y`)
 - printpdf 0.7 also writes a stray `/Subtype /Link` dict into `/Resources` (a broken `From<LinkAnnotationList>` impl). It carries no `/URI` and is not referenced from the page's `/Annots`, so viewers ignore it — the real annotations are built correctly in `pdf_document.rs`. Verify links with:
-  `python3 -c "import pikepdf; [print(a.get('/A',{}).get('/URI')) for a in pikepdf.open('flyer/educational_engineering.pdf').pages[0]['/Annots']]"`
+  `python3 -c "import pikepdf; [print(a.get('/A',{}).get('/URI')) for a in pikepdf.open('flyer/educational_engineering_2.pdf').pages[0]['/Annots']]"`
 - Fonts embedded from `/usr/share/fonts/dejavu` (Sans, Bold, Oblique) for full umlaut coverage. Not subsetted, hence the ~2 MB output.
 
 ## Key Dependencies

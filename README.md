@@ -96,19 +96,21 @@ sudo systemctl restart apache2
 
 ## Flyer-Generator
 
-Das Verzeichnis `flyer/` enthält ein eigenständiges Rust-Programm, das einen einseitigen A4-Flyer als PDF erzeugt — für den Weiterbildungskurs von Dr. med. Ursula Davatz „im Umgang mit ADHS- und ADS-Kindern und Jugendlichen“ (Zielgruppe: staatliche Erziehungspersonen wie Lehr-, Kindergarten- und Hortpersonal). „Educational Engineering“ dient als englischer Aufhänger.
+Das Verzeichnis `flyer/` enthält ein eigenständiges Rust-Programm, das einen einseitigen A4-Flyer als PDF erzeugt. Es liegen zwei Flyer im Repo:
+
+- **`educational_engineering.pdf`** — der ältere Flyer für die kostenlose Erziehungs-/Angehörigengruppe (behalten). Sein Generator-Stand liegt in der Git-Historie bei Commit `8abed8b`.
+- **`educational_engineering_2.pdf`** — der aktuelle Flyer für den Weiterbildungskurs von Dr. med. Ursula Davatz „im Umgang mit ADHS- und ADS-Kindern und Jugendlichen“ (Zielgruppe: staatliche Erziehungspersonen wie Lehr-, Kindergarten- und Hortpersonal). „Educational Engineering“ dient als englischer Aufhänger. Dies ist die Ausgabe des aktuellen `flyer/src/main.rs`.
 
 ```bash
 cd flyer
 cargo build --release
-./target/release/flyer educational_engineering.pdf
+./target/release/flyer                          # schreibt educational_engineering_2.pdf
+./target/release/flyer meine_datei.pdf          # oder ein eigener Dateiname
 ```
 
 Das Layout wird direkt mit `printpdf` gezeichnet. Die Textbreiten werden mit `ttf-parser` aus den DejaVu-Sans-Metriken gemessen, damit der Zeilenumbruch auf echten Glyphenbreiten beruht. Die Schriften werden aus `/usr/share/fonts/dejavu` eingebettet.
 
 Alle Links sind echte PDF-Link-Annotationen und damit anklickbar: im Footer die Praxisadresse (Google Maps), die Telefonnummer (`tel:`), die E-Mail (`mailto:`) und `www.ganglion.ch`; zusätzlich die E-Mail im Anmelde-Balken und die Adresse in der „Auf einen Blick“-Box. Die Ziel-URLs stehen als Konstanten (`MAP_URL`, `WEB_URL`, `MAIL_URL`, `TEL_URL`) am Kopf von `flyer/src/main.rs`.
-
-Der fertige Flyer liegt als `flyer/educational_engineering.pdf` im Repo.
 
 ## Weiterführende Informationen
 
