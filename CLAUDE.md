@@ -32,9 +32,21 @@ bash download_pdfs.sh                            # download all PDFs from gangli
   - `api_ask()` — SSE streaming endpoint: FTS5 retrieval → Grok streaming → token-by-token response
   - `format_text_html()` — shared text formatter: joins PDF lines into flowing text, bolds timestamps, bold+italic speakers, auto-linkifies URLs
   - `vortrag_page()` — detail page with formatted text, speaker/date header, audio+PDF links
-- **src/titles.rs** — static metadata mapping (vortrag ID → title + date) for ~320 lectures, scraped from ganglion.ch
+- **src/titles.rs** — static metadata mapping (vortrag ID → title + date) for ~720 lectures; new entries go at the top
+- **Scans** — `pdf/vortrag_<id>_scan<n>.pdf` is a scan of the original manuscript attached to lecture `<id>`; `<n>` is the row id in ganglion.ch's `vortrag_scan` table. `vortrag_num()` / `scan_num()` parse both parts; scans inherit the lecture's title with " (Scan)" and link to `download_vortrag.php?id=<id>&download=scan&scan=<n>`
 - **src/index.html** — SPA with search mode, ask mode (SSE streaming), markdown rendering, source links
 - **download_pdfs.sh** — downloads all PDFs from ganglion.ch into pdf/
+
+## Updating the live index
+
+The live instance on the ganglion.ch server runs from `~/deploy/` (binary + `ganglion.db`) in the `screen` session `gang2fts5`, whose shell holds `XAI_API_KEY`. `gang2fts5 update` runs `download_pdfs.sh` and then indexes; the script has a fixed ID list and knows neither scans nor lectures missing from it — copy those PDFs into `pdf/` by hand.
+
+1. add the titles to `src/titles.rs`, put the PDFs into `pdf/` under the names above
+2. `cargo build --release`
+3. `./target/release/gang2fts5 --db copy.db index --pdf-dir pdf` on a **copy** of `~/deploy/ganglion.db` — `index` only adds missing files, `populate_metadata()` then updates titles and dates
+4. `mv` copy and binary into `~/deploy/`, restart in the screen session (Ctrl-C, `./gang2fts5 serve`)
+
+Image-only PDFs without a text layer are skipped (`no text content`).
 
 ## Deploy
 

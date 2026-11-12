@@ -5,7 +5,7 @@ Volltextsuche und KI-gestützte Fragen über die Vorträge der [Ganglion-Organis
 ## Features
 
 - **PDF-Download & Indexierung** — Lädt alle Vortrags-PDFs von ganglion.ch herunter, extrahiert den Text und indexiert ihn in SQLite mit FTS5
-- **Volltextsuche** — Schnelle Suche über 367 Vorträge mit Snippet-Highlighting
+- **Volltextsuche** — Schnelle Suche über 681 Vorträge und 137 Scans von Originalmanuskripten (818 Dokumente, Stand November 2026) mit Snippet-Highlighting
 - **KI-Antworten (RAG)** — Stellt eine Frage in natürlicher Sprache, die App sucht relevante Textabschnitte und lässt sie von Grok (xAI) beantworten, mit Streaming
 - **Web-GUI** — Suchoberfläche mit Suchen- und Fragen-Modus, formatierte Vortrag-Detailseiten, Audio-Links und Quellenverweise
 - **Audio-Links** — Direkte Links zu den Audio-Aufnahmen der Vorträge (von adhs.expert und schizoud.wordpress.com)
@@ -33,6 +33,10 @@ export XAI_API_KEY="your-key"
 
 # DB aktualisieren (neue PDFs herunterladen + indexieren)
 ./target/release/gang2fts5 update
+
+# Scans von Originalmanuskripten: pdf/vortrag_<id>_scan<n>.pdf
+# (<n> = Zeile in der Tabelle vortrag_scan auf ganglion.ch); sie erben den
+# Titel des Vortrags mit dem Zusatz «(Scan)».
 
 # Deploy: build, index and scp binary + DB to remote server
 ./target/release/gang2fts5 deploy

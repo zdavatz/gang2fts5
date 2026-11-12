@@ -153,6 +153,15 @@ fn populate_metadata(conn: &Connection, pdf_dir: &str) -> Result<()> {
         if changed > 0 {
             updated += 1;
         }
+        // Scans of the original manuscript carry the lecture's title and date
+        let scan_title = format!("{} (Scan)", meta.title);
+        let changed = conn.execute(
+            "UPDATE documents SET title = ?1, date = ?2 WHERE filename LIKE ?3 AND (title != ?1 OR date != ?2)",
+            rusqlite::params![scan_title, meta.date, format!("vortrag_{}_scan%", id)],
+        )?;
+        if changed > 0 {
+            updated += 1;
+        }
     }
 
     // Extract audio URLs from PDFs
@@ -228,13 +237,11 @@ fn index_pdfs(conn: &Connection, pdf_dir: &str) -> Result<()> {
             continue;
         }
 
-        let vortrag_id = filename
-            .strip_prefix("vortrag_")
-            .and_then(|s| s.strip_suffix(".pdf"))
-            .and_then(|s| s.parse::<u32>().ok());
+        let vortrag_id = vortrag_num(&filename);
 
         let meta = vortrag_id.and_then(|id| meta_map.get(&id));
-        let title = meta.map(|m| m.title).unwrap_or("");
+        let title = meta.map(|m| scan_title(m.title, &filename)).unwrap_or_default();
+        let title = title.as_str();
         let date = meta.map(|m| m.date).unwrap_or("");
 
         match extract_pdf_text(path) {
@@ -303,6 +310,27 @@ fn cli_search(conn: &Connection, query: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Lecture ID from `vortrag_<id>.pdf` or a scan `vortrag_<id>_scan<n>.pdf`
+fn vortrag_num(filename: &str) -> Option<u32> {
+    let rest = filename.strip_prefix("vortrag_")?;
+    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
+}
+
+/// `n` from `vortrag_<id>_scan<n>.pdf`: the row id in ganglion.ch's `vortrag_scan` table
+fn scan_num(filename: &str) -> Option<u32> {
+    let rest = filename.strip_suffix(".pdf")?;
+    rest.rsplit_once("_scan")?.1.parse().ok()
+}
+
+fn scan_title(title: &str, filename: &str) -> String {
+    if scan_num(filename).is_some() {
+        format!("{} (Scan)", title)
+    } else {
+        title.to_string()
+    }
 }
 
 fn vortrag_id_from_filename(filename: &str) -> String {
@@ -763,10 +791,16 @@ async fn vortrag_page(
         .and_then(|s| s.strip_suffix(".pdf"))
         .unwrap_or("");
 
-    let pdf_url = format!(
-        "https://ganglion.ch/html/php/download_vortrag.php?id={}&download=pdf",
-        vortrag_id
-    );
+    let pdf_url = match (vortrag_num(&filename), scan_num(&filename)) {
+        (Some(id), Some(scan)) => format!(
+            "https://ganglion.ch/html/php/download_vortrag.php?id={}&download=scan&scan={}",
+            id, scan
+        ),
+        _ => format!(
+            "https://ganglion.ch/html/php/download_vortrag.php?id={}&download=pdf",
+            vortrag_id
+        ),
+    };
     let audio_link_html = if audio_url.is_empty() {
         String::new()
     } else {
