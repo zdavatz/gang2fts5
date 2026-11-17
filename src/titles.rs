@@ -173,6 +173,7 @@ pub fn get_metadata() -> HashMap<u32, VortragMeta> {
         (785, "Gedanken zum Thema Ablösung von Alleinerziehern", "15.08.1988"),
         (784, "Neurotypgerechte Unterstützung von Jugendlichen mit ADHS und ADS", "15.06.2026"),
         (783, "Migrationsprobleme in der Psychiatrie", "15.05.1996"),
+        (124, "Angst ist ein schlechter Ratgeber", "13.06.1996"),
         (782, "Einige Gedanken zur Zusammenarbeit zwischen Gemeindesozialwesen und SPD", "15.04.1988"),
         (781, "Das Konzept des «Cut-off»-Verhaltens in einer Beziehung oder die gewaltsame Abtrennung einer Fusions-Beziehung", "15.03.2018"),
         (780, "Das volle Nest – das leere Nest: Was ist schlimmer? Was ist schöner?", "15.03.2007"),
