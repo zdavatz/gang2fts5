@@ -26,6 +26,7 @@ pub fn get_metadata() -> HashMap<u32, VortragMeta> {
         (939, "AD(H)S und Depression", "06.02.2020"),
         (940, "Konzept der affektiven Logik angewandt auf die Politik", "17.11.2026"),
         (941, "Hochsensibilität", "09.09.2021"),
+        (942, "Der Mensch hinter der Diagnose – Systemisch intervenieren heisst Menschen fördern statt Diagnosen behandeln", "17.05.2018"),
         (935, "Adoptivkinder, Adoptiveltern", "31.07.2000"),
         (934, "Abschlussarbeit Kurs II Familientheorie und -beratung", "30.12.1993"),
         (933, "Mütter- und Väterberatung – Consulting in menschlicher Brutpflege", "30.11.2001"),
