@@ -20,6 +20,7 @@ pub fn get_metadata() -> HashMap<u32, VortragMeta> {
         (398, "Im kritischen Moment das Richtige tun", "30.04.2016"),
         (211, "Betreuung psychisch Kranker in der Spitex", "05.06.2003"),
         (140, "Postpartale Depression", "09.05.2001"),
+        (936, "Cannabisinduzierte Psychose – Was können Eltern tun?", "17.11.2026"),
         (935, "Adoptivkinder, Adoptiveltern", "31.07.2000"),
         (934, "Abschlussarbeit Kurs II Familientheorie und -beratung", "30.12.1993"),
         (933, "Mütter- und Väterberatung – Consulting in menschlicher Brutpflege", "30.11.2001"),
